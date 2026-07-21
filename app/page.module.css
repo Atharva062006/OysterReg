@@ -13,14 +13,22 @@
   margin-bottom: 2.5rem;
 }
 
+.logoRow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
 .clubTag {
-  display: inline-block;
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   font-weight: 600;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--text-secondary);
-  margin-bottom: 0.75rem;
+  background: linear-gradient(135deg, #f5a623, #e91e8c);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .title {
@@ -64,7 +72,7 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: var(--text-secondary);
+  color: var(--text-muted);
 }
 
 .divider {
@@ -100,7 +108,7 @@
 
 .submitError {
   background: var(--danger-light);
-  border: 1px solid #fca5a5;
+  border: 1px solid rgba(248, 113, 113, 0.3);
   border-radius: var(--radius-sm);
   color: var(--danger);
   font-size: 0.9rem;

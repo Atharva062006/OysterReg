@@ -2,26 +2,45 @@
 
 /* ── Design Tokens ──────────────────────────────────────────────────────── */
 :root {
-  --bg: #f6f6f4;
-  --surface: #ffffff;
-  --border: #e2e2de;
-  --border-focus: #1a1a1a;
-  --text-primary: #111110;
-  --text-secondary: #6b6b6b;
-  --text-muted: #9b9b9b;
-  --accent: #2563eb;
-  --accent-hover: #1d4ed8;
-  --accent-light: #eff6ff;
-  --danger: #dc2626;
-  --danger-light: #fef2f2;
-  --success: #16a34a;
-  --success-light: #f0fdf4;
+  /* Backgrounds */
+  --bg:              #0c0c0e;
+  --surface:         #141417;
+  --surface-raised:  #1c1c21;
+
+  /* Borders */
+  --border:          #28282f;
+  --border-subtle:   #1f1f26;
+  --border-focus:    #f5a623;
+
+  /* Text */
+  --text-primary:    #f0eff4;
+  --text-secondary:  #9191a0;
+  --text-muted:      #4a4a56;
+
+  /* Brand gradient */
+  --accent:          #f5a623;
+  --accent-end:      #e91e8c;
+  --accent-hover:    #e8961a;
+  --accent-light:    rgba(245, 166, 35, 0.12);
+  --gradient:        linear-gradient(135deg, #f5a623 0%, #f0603a 50%, #e91e8c 100%);
+
+  /* Semantic */
+  --danger:          #f87171;
+  --danger-light:    rgba(248, 113, 113, 0.1);
+  --success:         #4ade80;
+  --success-light:   rgba(74, 222, 128, 0.1);
+
+  /* Radii */
   --radius-sm: 6px;
   --radius-md: 10px;
   --radius-lg: 14px;
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.04);
-  --font: "Inter", system-ui, -apple-system, sans-serif;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.5), 0 2px 4px rgba(0, 0, 0, 0.3);
+
+  /* Misc */
+  --font:       "Inter", system-ui, -apple-system, sans-serif;
   --transition: 150ms ease;
 }
 
@@ -51,6 +70,7 @@ h1, h2, h3, h4 {
   line-height: 1.25;
   font-weight: 600;
   letter-spacing: -0.02em;
+  color: var(--text-primary);
 }
 
 p {
@@ -73,7 +93,7 @@ textarea {
   font-family: var(--font);
   font-size: 0.9375rem;
   color: var(--text-primary);
-  background: var(--surface);
+  background: var(--surface-raised);
   border: 1.5px solid var(--border);
   border-radius: var(--radius-sm);
   padding: 0.625rem 0.75rem;
@@ -87,7 +107,7 @@ input:focus,
 select:focus,
 textarea:focus {
   border-color: var(--border-focus);
-  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 0 0 3px rgba(245, 166, 35, 0.15);
 }
 
 input::placeholder,
@@ -101,11 +121,17 @@ textarea {
 }
 
 select {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b6b6b' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%234a4a56' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 0.75rem center;
+  background-color: var(--surface-raised);
   padding-right: 2.25rem;
   cursor: pointer;
+}
+
+select option {
+  background: var(--surface-raised);
+  color: var(--text-primary);
 }
 
 /* ── Buttons ────────────────────────────────────────────────────────────── */
@@ -121,8 +147,7 @@ select {
   padding: 0.625rem 1.25rem;
   border: none;
   cursor: pointer;
-  transition: background var(--transition), transform var(--transition),
-    box-shadow var(--transition);
+  transition: opacity var(--transition), transform var(--transition), box-shadow var(--transition);
   text-decoration: none;
 }
 
@@ -131,30 +156,33 @@ select {
 }
 
 .btn-primary {
-  background: var(--text-primary);
+  background: var(--gradient);
   color: #fff;
+  box-shadow: 0 2px 12px rgba(245, 166, 35, 0.25);
 }
 
 .btn-primary:hover {
-  background: #333;
+  opacity: 0.88;
+  box-shadow: 0 4px 18px rgba(245, 166, 35, 0.35);
 }
 
 .btn-primary:disabled {
-  background: var(--border);
+  background: var(--surface-raised);
   color: var(--text-muted);
   cursor: not-allowed;
   transform: none;
+  box-shadow: none;
 }
 
 .btn-outline {
   background: transparent;
-  color: var(--text-primary);
+  color: var(--text-secondary);
   border: 1.5px solid var(--border);
 }
 
 .btn-outline:hover {
-  background: var(--bg);
-  border-color: var(--text-primary);
+  border-color: var(--accent);
+  color: var(--text-primary);
 }
 
 /* ── Utility ────────────────────────────────────────────────────────────── */

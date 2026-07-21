@@ -18,7 +18,7 @@
   font-family: var(--font);
   font-size: 0.9rem;
   color: var(--text-primary);
-  background: var(--surface);
+  background: var(--surface-raised);
   border: 1.5px solid var(--border);
   border-radius: var(--radius-sm);
   padding: 0.5rem 0.75rem;
@@ -28,7 +28,7 @@
 
 .searchInput:focus {
   border-color: var(--border-focus);
-  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 0 0 3px rgba(245, 166, 35, 0.12);
 }
 
 .filters {
@@ -41,6 +41,7 @@
   width: auto;
   font-size: 0.875rem;
   padding: 0.5rem 2rem 0.5rem 0.625rem;
+  background: var(--surface-raised);
 }
 
 .exportBtn {
@@ -70,7 +71,7 @@
 }
 
 .table thead tr {
-  background: var(--bg);
+  background: var(--surface-raised);
   border-bottom: 1.5px solid var(--border);
 }
 
@@ -81,13 +82,13 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: var(--text-secondary);
+  color: var(--text-muted);
   white-space: nowrap;
 }
 
 .table td {
   padding: 0.75rem 1rem;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--border-subtle);
   vertical-align: middle;
   color: var(--text-primary);
 }
@@ -97,7 +98,7 @@
 }
 
 .table tbody tr:hover {
-  background: var(--bg);
+  background: var(--surface-raised);
 }
 
 .sortable {
@@ -116,7 +117,7 @@
 }
 
 .sortActive {
-  color: var(--text-primary);
+  color: var(--accent);
   margin-left: 0.25rem;
   font-size: 0.75rem;
 }
@@ -145,11 +146,39 @@
   white-space: nowrap;
 }
 
+.portfolioCell {
+  text-align: center;
+}
+
+.portfolioLink {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--accent);
+  text-decoration: none;
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(245, 166, 35, 0.25);
+  background: rgba(245, 166, 35, 0.08);
+  transition: background var(--transition), border-color var(--transition);
+  white-space: nowrap;
+}
+
+.portfolioLink:hover {
+  background: rgba(245, 166, 35, 0.18);
+  border-color: var(--accent);
+  text-decoration: none;
+}
+
+.noLink {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
 .badge {
   display: inline-block;
   font-size: 0.75rem;
   font-weight: 500;
-  background: var(--bg);
+  background: var(--surface-raised);
   border: 1px solid var(--border);
   border-radius: 4px;
   padding: 0.125rem 0.5rem;
@@ -172,36 +201,36 @@
   padding: 0.25rem 0.75rem;
   border: 1.5px solid transparent;
   cursor: pointer;
-  transition: background var(--transition), border-color var(--transition);
+  transition: background var(--transition), border-color var(--transition), opacity var(--transition);
   white-space: nowrap;
 }
 
 .attendanceBtn:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
 .present {
   background: var(--success-light);
-  border-color: #86efac;
+  border-color: rgba(74, 222, 128, 0.35);
   color: var(--success);
 }
 
 .present:hover:not(:disabled) {
-  background: #dcfce7;
+  background: rgba(74, 222, 128, 0.18);
 }
 
 .absent {
-  background: var(--bg);
+  background: var(--surface-raised);
   border-color: var(--border);
-  color: var(--text-secondary);
+  color: var(--text-muted);
 }
 
 .absent:hover:not(:disabled) {
-  background: var(--surface);
-  border-color: var(--text-muted);
+  border-color: var(--accent);
+  color: var(--text-primary);
 }
 
 .presentRow {
-  background: #fafffe;
+  background: rgba(74, 222, 128, 0.03);
 }

@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none">
+  <defs>
+    <linearGradient id="lg" x1="0" y1="0" x2="200" y2="200" gradientUnits="userSpaceOnUse">
+      <stop offset="0%"   stop-color="#F5A623"/>
+      <stop offset="50%"  stop-color="#F0603A"/>
+      <stop offset="100%" stop-color="#E91E8C"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Main outer arc (~300°, going CCW from upper-right through left to lower-right) -->
+  <path d="M 125 17 A 88 88 0 1 0 125 183"
+        stroke="url(#lg)" stroke-width="15" stroke-linecap="round"/>
+
+  <!-- Vertical bar (spine of K / left stroke of C) -->
+  <line x1="65" y1="12" x2="65" y2="188"
+        stroke="url(#lg)" stroke-width="15" stroke-linecap="round"/>
+
+  <!-- K upper arm -->
+  <line x1="65" y1="100" x2="172" y2="18"
+        stroke="url(#lg)" stroke-width="15" stroke-linecap="round"/>
+
+  <!-- K lower arm -->
+  <line x1="65" y1="100" x2="165" y2="182"
+        stroke="url(#lg)" stroke-width="15" stroke-linecap="round"/>
+
+  <!-- Disconnected bottom-right arc (pink piece) -->
+  <path d="M 125 183 A 88 88 0 0 0 100 188"
+        stroke="url(#lg)" stroke-width="15" stroke-linecap="round"/>
+</svg>

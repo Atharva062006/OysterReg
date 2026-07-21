@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { getAllRegistrations, Registration } from "@/lib/firebase";
 import StatCard from "@/components/StatCard";
 import RegistrationTable from "@/components/RegistrationTable";
@@ -78,9 +79,12 @@ export default function AdminDashboardPage() {
       {/* ── Top Bar ── */}
       <header className={styles.topBar}>
         <div className={styles.topBarInner}>
-          <div>
-            <div className={styles.breadcrumb}>Oyster Coding Club</div>
-            <h1 className={styles.pageTitle}>Admin Dashboard</h1>
+          <div className={styles.topBarLeft}>
+            <Image src="/logo1.svg" alt="Oyster Kode Club" width={32} height={32} />
+            <div>
+              <div className={styles.breadcrumb}>Oyster Kode Club</div>
+              <h1 className={styles.pageTitle}>Admin Dashboard</h1>
+            </div>
           </div>
           <button
             id="admin-signout-btn"

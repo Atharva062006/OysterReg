@@ -167,6 +167,7 @@ export default function RegistrationTable({ initialData }: Props) {
               </th>
               <th>Gender</th>
               <th>Coded?</th>
+              <th>GitHub</th>
               <th onClick={() => handleSort("submittedAt")} className={styles.sortable}>
                 Submitted <SortIndicator k="submittedAt" />
               </th>
@@ -176,7 +177,7 @@ export default function RegistrationTable({ initialData }: Props) {
           <tbody>
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={8} className={styles.empty}>No registrations found.</td>
+                <td colSpan={9} className={styles.empty}>No registrations found.</td>
               </tr>
             ) : (
               filtered.map((r) => (
@@ -192,6 +193,21 @@ export default function RegistrationTable({ initialData }: Props) {
                   <td>{r.year}</td>
                   <td>{r.gender}</td>
                   <td>{r.hasCodedBefore ? "Yes" : "No"}</td>
+                  <td className={styles.portfolioCell}>
+                    {r.portfolioUrl ? (
+                      <a
+                        href={r.portfolioUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={styles.portfolioLink}
+                        title={r.portfolioUrl}
+                      >
+                        View
+                      </a>
+                    ) : (
+                      <span className={styles.noLink}>—</span>
+                    )}
+                  </td>
                   <td className={styles.date}>
                     {r.submittedAt.toDate().toLocaleDateString("en-IN", {
                       day: "numeric",

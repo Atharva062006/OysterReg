@@ -19,6 +19,24 @@
   gap: 1rem;
 }
 
+.logoRow {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  margin-bottom: 0.5rem;
+}
+
+.clubTag {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: linear-gradient(135deg, #f5a623, #e91e8c);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
 .icon {
   width: 52px;
   height: 52px;
@@ -28,7 +46,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1.5px solid #86efac;
+  border: 1.5px solid rgba(74, 222, 128, 0.3);
   margin-bottom: 0.25rem;
 }
 

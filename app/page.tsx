@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { submitRegistration } from "@/lib/firebase";
 import FormField from "@/components/FormField";
 import styles from "./page.module.css";
@@ -135,7 +136,10 @@ export default function RegistrationPage() {
       <div className={styles.container}>
         {/* Header */}
         <header className={styles.header}>
-          <div className={styles.clubTag}>Oyster Coding Club</div>
+          <div className={styles.logoRow}>
+            <Image src="/logo1.svg" alt="Oyster Kode Club" width={40} height={40} />
+            <div className={styles.clubTag}>Oyster Kode Club</div>
+          </div>
           <h1 className={styles.title}>Recruitment 2026</h1>
           <p className={styles.subtitle}>
             Fill out the form below to apply. We will reach out to shortlisted candidates
