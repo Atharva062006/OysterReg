@@ -194,3 +194,19 @@ select option {
   clip: rect(0 0 0 0);
   white-space: nowrap;
 }
+
+/* ── Mobile globals ─────────────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  /* 16px minimum prevents iOS Safari auto-zooming on input focus */
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+
+  /* Taller tap targets on small screens */
+  input,
+  select {
+    min-height: 44px;
+  }
+}

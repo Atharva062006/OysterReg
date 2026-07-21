@@ -9,6 +9,12 @@ export const metadata: Metadata = {
     "Register for the Oyster Kode Club recruitment drive. Fill in your details to apply.",
 };
 
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover", // lets content reach notch/island edges
+};
+
 export default function RootLayout({
   children,
 }: {
