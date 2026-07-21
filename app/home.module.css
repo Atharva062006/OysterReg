@@ -1,0 +1,174 @@
+/* ── Home Page ──────────────────────────────────────────────────────────── */
+.main {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  text-align: center;
+  padding: 2rem;
+  padding-bottom: 18vh; /* shift content up from dead centre */
+}
+
+/* Soft radial glow behind the text */
+.glowOverlay {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse 80% 60% at 50% 55%,
+    rgba(245, 166, 35, 0.06) 0%,
+    rgba(233, 30, 140, 0.04) 40%,
+    transparent 70%
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ── Logo row ───────────────────────────────────────────────────────────── */
+.logoRow {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.logo {
+  filter: drop-shadow(0 0 10px rgba(245, 166, 35, 0.5));
+}
+
+.clubLabel {
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: linear-gradient(135deg, #f5a623 0%, #f0603a 50%, #e91e8c 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Headline ───────────────────────────────────────────────────────────── */
+.headline {
+  position: relative;
+  z-index: 10;
+  font-size: clamp(2.8rem, 7vw, 4.5rem);
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.04em;
+  color: var(--text-primary);
+  margin: 0;
+  text-shadow: 0 2px 40px rgba(0, 0, 0, 0.8);
+}
+
+.headlineGradient {
+  background: linear-gradient(135deg, #f5a623 0%, #f0603a 50%, #e91e8c 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Tagline ────────────────────────────────────────────────────────────── */
+.tagline {
+  position: relative;
+  z-index: 10;
+  font-size: 0.9375rem;
+  color: var(--text-secondary);
+  margin: 0;
+  letter-spacing: 0.01em;
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.9);
+}
+
+/* ── CTA Buttons ────────────────────────────────────────────────────────── */
+.actions {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 0.25rem;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font);
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  border-radius: 10px;
+  padding: 0.75rem 2rem;
+  cursor: pointer;
+  text-decoration: none;
+  transition:
+    transform 200ms ease,
+    box-shadow 200ms ease,
+    opacity 200ms ease,
+    border-color 200ms ease,
+    background 200ms ease;
+}
+
+.btn:active {
+  transform: translateY(1px) scale(0.98);
+}
+
+/* Primary: filled gradient */
+.btnPrimary {
+  background: linear-gradient(135deg, #f5a623 0%, #f0603a 50%, #e91e8c 100%);
+  color: #fff;
+  border: none;
+  box-shadow:
+    0 2px 14px rgba(245, 166, 35, 0.3),
+    0 0 0 1px rgba(245, 166, 35, 0.15);
+}
+
+.btnPrimary:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 6px 30px rgba(233, 30, 140, 0.55),
+    0 2px 16px rgba(245, 166, 35, 0.5),
+    0 0 70px rgba(233, 30, 140, 0.2);
+  opacity: 0.92;
+  text-decoration: none;
+}
+
+/* Outline */
+.btnOutline {
+  background: rgba(12, 12, 14, 0.4);
+  color: var(--text-primary);
+  border: 1.5px solid rgba(245, 166, 35, 0.4);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.btnOutline:hover {
+  border-color: #e91e8c;
+  color: #fff;
+  background: rgba(233, 30, 140, 0.12);
+  box-shadow:
+    0 6px 30px rgba(233, 30, 140, 0.4),
+    0 0 60px rgba(233, 30, 140, 0.15),
+    0 0 0 1px rgba(233, 30, 140, 0.3);
+  transform: translateY(-2px);
+  text-decoration: none;
+}
+
+/* ── Responsive ─────────────────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .actions {
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+  }
+
+  .btn {
+    width: min(280px, 100%);
+    justify-content: center;
+  }
+}
