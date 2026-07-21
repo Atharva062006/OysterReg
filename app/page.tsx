@@ -7,12 +7,15 @@ import FormField from "@/components/FormField";
 import styles from "./page.module.css";
 
 const DEPARTMENTS = [
-  { value: "CSE", label: "CSE — Computer Science & Engineering" },
-  { value: "IT", label: "IT — Information Technology" },
-  { value: "ECE", label: "ECE — Electronics & Communication" },
-  { value: "EEE", label: "EEE — Electrical & Electronics" },
-  { value: "MECH", label: "MECH — Mechanical Engineering" },
-  { value: "CIVIL", label: "CIVIL — Civil Engineering" },
+  { value: "CSE", label: "Computer Science & Engineering" },
+  { value: "CSE AIML", label: "Artificial Intelligence & Machine Learning" },
+  { value: "IT", label: "Information Technology" },
+  { value: "ENTC", label: "Electronics & Telecommunication" },
+  { value: "EE", label: "Electrical Engineering" },
+  { value: "MECH", label: "Mechanical Engineering" },
+  { value: "ROBOTICS", label: "Robotics & Automation" },
+  { value: "MECHATRONICS", label: "Mechatronics" },
+  { value: "CIVIL", label: "Civil Engineering" },
   { value: "OTHER", label: "Other" },
 ];
 
@@ -74,6 +77,7 @@ function validate(f: FormState): FormErrors {
   if (!f.year) e.year = "Please select your year.";
   if (!f.gender) e.gender = "Please select an option.";
   if (!f.hasCodedBefore) e.hasCodedBefore = "Please select an option.";
+  if (!f.whyJoin.trim()) e.whyJoin = "Please tell us why you want to join.";
   return e;
 }
 
@@ -132,7 +136,7 @@ export default function RegistrationPage() {
         {/* Header */}
         <header className={styles.header}>
           <div className={styles.clubTag}>Oyster Coding Club</div>
-          <h1 className={styles.title}>Recruitment 2025</h1>
+          <h1 className={styles.title}>Recruitment 2026</h1>
           <p className={styles.subtitle}>
             Fill out the form below to apply. We will reach out to shortlisted candidates
             with details about the selection process.
@@ -156,7 +160,7 @@ export default function RegistrationPage() {
               <FormField
                 id="rollNumber"
                 label="Roll Number"
-                placeholder="e.g. 22CS1001"
+                placeholder="e.g. 2403036"
                 required
                 value={form.rollNumber}
                 onChange={set("rollNumber")}
@@ -253,9 +257,10 @@ export default function RegistrationPage() {
               label="Why do you want to join?"
               type="textarea"
               placeholder="In 2-3 sentences, tell us what draws you to the club..."
+              required
               value={form.whyJoin}
               onChange={set("whyJoin")}
-              hint="Optional."
+              error={errors.whyJoin}
             />
           </section>
 
