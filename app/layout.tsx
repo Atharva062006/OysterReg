@@ -7,7 +7,12 @@ export const metadata: Metadata = {
   title: "Oyster Kode Club — Recruitment 2026",
   description:
     "Register for the Oyster Kode Club recruitment drive. Fill in your details to apply.",
+  icons: {
+    icon: "/logo4.png",
+    apple: "/logo4.png",
+  },
 };
+
 
 export const viewport = {
   width: "device-width",

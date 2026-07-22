@@ -3,10 +3,20 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import Link from "next/link";
 import { getAllRegistrations, Registration } from "@/lib/firebase";
 import StatCard from "@/components/StatCard";
 import RegistrationTable from "@/components/RegistrationTable";
+import AdminNav from "@/components/AdminNav";
 import styles from "./admin.module.css";
+
+const STATUS_LABELS: Record<string, string> = {
+  registered: "Registered",
+  aptitude_shortlisted: "Aptitude Shortlisted",
+  interview_shortlisted: "Interview Shortlisted",
+  selected: "Selected",
+  rejected: "Rejected",
+};
 
 export default function AdminDashboardPage() {
   const router = useRouter();
@@ -39,21 +49,29 @@ export default function AdminDashboardPage() {
     router.push("/admin/login");
   }
 
-  // ── Stats ──────────────────────────────────────────────────────────────
+  // ── Pipeline stage counts ──────────────────────────────────────────────
   const total = registrations.length;
+  const byStatus = (s: string) =>
+    registrations.filter((r) => (r.status ?? "registered") === s).length;
+
+  const registeredCount = byStatus("registered");
+  const aptitudeCount = byStatus("aptitude_shortlisted");
+  const interviewCount = byStatus("interview_shortlisted");
+  const selectedCount = byStatus("selected");
+  const rejectedCount = byStatus("rejected");
+
+  // ── Other stats ───────────────────────────────────────────────────────
   const presentCount = registrations.filter((r) => r.present).length;
   const male = registrations.filter((r) => r.gender === "Male").length;
   const female = registrations.filter((r) => r.gender === "Female").length;
   const other = total - male - female;
 
-  // Department breakdown — top 3 + rest
   const deptMap: Record<string, number> = {};
   registrations.forEach((r) => {
     deptMap[r.department] = (deptMap[r.department] || 0) + 1;
   });
   const deptEntries = Object.entries(deptMap).sort((a, b) => b[1] - a[1]);
 
-  // Year breakdown
   const yearMap: Record<string, number> = {};
   registrations.forEach((r) => {
     yearMap[r.year] = (yearMap[r.year] || 0) + 1;
@@ -96,6 +114,9 @@ export default function AdminDashboardPage() {
         </div>
       </header>
 
+      {/* ── Pipeline Nav ── */}
+      <AdminNav />
+
       <main className={styles.main}>
         {error && (
           <div className={styles.errorBanner} role="alert">
@@ -103,14 +124,37 @@ export default function AdminDashboardPage() {
           </div>
         )}
 
+        {/* ── Pipeline Flow ── */}
+        <section className={styles.section}>
+          <h2 className={styles.sectionTitle}>Recruitment Pipeline</h2>
+          <div className={styles.pipeline}>
+            {[
+              { label: "Registered", count: registeredCount, href: "/admin/aptitude", color: "default" },
+              { label: "Aptitude Shortlisted", count: aptitudeCount, href: "/admin/interview", color: "blue" },
+              { label: "Interview Shortlisted", count: interviewCount, href: "/admin/selected", color: "amber" },
+              { label: "Selected", count: selectedCount, href: "/admin/selected", color: "green" },
+            ].map(({ label, count, href, color }, i) => (
+              <div key={label} className={styles.pipelineStep}>
+                <Link href={href} className={`${styles.pipelineCard} ${styles[`pipeline_${color}`]}`}>
+                  <span className={styles.pipelineCount}>{count}</span>
+                  <span className={styles.pipelineLabel}>{label}</span>
+                </Link>
+                {i < 3 && <span className={styles.pipelineArrow}>→</span>}
+              </div>
+            ))}
+          </div>
+          {rejectedCount > 0 && (
+            <p className={styles.rejectedNote}>
+              {rejectedCount} candidate{rejectedCount !== 1 ? "s" : ""} rejected across all stages.
+            </p>
+          )}
+        </section>
+
         {/* ── Stats Grid ── */}
         <section className={styles.section}>
           <h2 className={styles.sectionTitle}>Overview</h2>
           <div className={styles.statsGrid}>
-            <StatCard
-              label="Total Registrations"
-              value={total}
-            />
+            <StatCard label="Total Registrations" value={total} />
             <StatCard
               label="Attendance Marked"
               value={presentCount}
@@ -214,9 +258,9 @@ export default function AdminDashboardPage() {
           </div>
         </section>
 
-        {/* ── Registrations Table ── */}
+        {/* ── All Registrations Table ── */}
         <section className={styles.section}>
-          <h2 className={styles.sectionTitle}>Registrations</h2>
+          <h2 className={styles.sectionTitle}>All Registrations</h2>
           <RegistrationTable initialData={registrations} />
         </section>
       </main>

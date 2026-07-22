@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint"
   },
+
   "dependencies": {
     "@tailwindcss/postcss": "^4.3.3",
     "autoprefixer": "^10.5.4",

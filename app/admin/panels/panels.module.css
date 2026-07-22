@@ -1,0 +1,261 @@
+.sectionHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.sectionDesc {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  margin-top: 0.25rem;
+  max-width: 600px;
+}
+
+/* ── Create Form ──────────────────────────────────────────────────────── */
+.createForm {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.createTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.formRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.formError {
+  font-size: 0.875rem;
+  color: var(--danger);
+}
+
+.formActions {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+/* ── Panel Grid ───────────────────────────────────────────────────────── */
+.panelGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.panelCard {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.panelCard:hover {
+  border-color: rgba(245, 166, 35, 0.3);
+  box-shadow: var(--shadow-sm);
+}
+
+.panelTop {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.875rem;
+}
+
+.panelIcon {
+  font-size: 1.5rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.panelInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.panelName {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.passcodeRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.passcodeLabel {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.passcode {
+  font-family: ui-monospace, monospace;
+  font-size: 0.875rem;
+  color: var(--text-primary);
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.2rem 0.5rem;
+  letter-spacing: 0.05em;
+}
+
+.revealBtn {
+  background: none;
+  border: none;
+  font-size: 0.75rem;
+  color: var(--accent);
+  cursor: pointer;
+  padding: 0;
+  font-family: var(--font);
+}
+
+.revealBtn:hover {
+  text-decoration: underline;
+}
+
+/* ── Panel Actions ────────────────────────────────────────────────────── */
+.panelActions {
+  display: flex;
+  gap: 0.5rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.copyBtn {
+  flex: 1;
+  padding: 0.4375rem 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: border-color var(--transition), color var(--transition);
+  font-family: var(--font);
+}
+
+.copyBtn:hover {
+  border-color: var(--accent);
+  color: var(--text-primary);
+}
+
+.deleteBtn {
+  padding: 0.4375rem 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  background: transparent;
+  border: 1px solid rgba(248, 113, 113, 0.25);
+  border-radius: var(--radius-sm);
+  color: var(--danger);
+  cursor: pointer;
+  transition: background var(--transition), border-color var(--transition);
+  font-family: var(--font);
+}
+
+.deleteBtn:hover {
+  background: var(--danger-light);
+  border-color: rgba(248, 113, 113, 0.5);
+}
+
+.deleteBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ── Empty State ─────────────────────────────────────────────────────── */
+.empty {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--text-secondary);
+  font-size: 0.9375rem;
+}
+
+.emptyHint {
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+  margin-top: 0.375rem;
+}
+
+/* ── How It Works ────────────────────────────────────────────────────── */
+.howItWorks {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.step {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.875rem;
+}
+
+.stepNum {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--accent-light);
+  color: var(--accent);
+  font-size: 0.75rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 1px solid rgba(245, 166, 35, 0.3);
+}
+
+.step div {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  padding-top: 0.25rem;
+  line-height: 1.5;
+}
+
+.step strong {
+  color: var(--text-primary);
+}
+
+@media (max-width: 640px) {
+  .formRow {
+    grid-template-columns: 1fr;
+  }
+
+  .panelGrid {
+    grid-template-columns: 1fr;
+  }
+}
