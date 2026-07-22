@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { ThemeProvider } from "next-themes";
 import ClientBackground from "@/components/ClientBackground";
 import "./globals.css";
 
@@ -13,11 +12,10 @@ export const metadata: Metadata = {
   },
 };
 
-
 export const viewport = {
   width: "device-width",
   initialScale: 1,
-  viewportFit: "cover", // lets content reach notch/island edges
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
@@ -26,7 +24,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" className="dark" suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
@@ -36,10 +34,8 @@ export default function RootLayout({
         />
       </head>
       <body>
-        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
-          <ClientBackground />
-          {children}
-        </ThemeProvider>
+        <ClientBackground />
+        {children}
       </body>
     </html>
   );

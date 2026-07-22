@@ -1,8 +1,224 @@
 "use client";
 
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import styles from "./why-join-us.module.css";
+import { ImageGallery, GalleryItem } from "@/components/ui/image-gallery";
+
+// Slow & smooth scroll-reveal wrapper component
+function ScrollRevealSection({ children, className = "", delay = 0 }: { children: React.ReactNode; className?: string; delay?: number }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof IntersectionObserver === "undefined") {
+      setIsVisible(true);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+          observer.unobserve(entry.target);
+        }
+      },
+      { threshold: 0.08 }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <div
+      ref={ref}
+      style={{ transitionDelay: `${delay}ms` }}
+      className={`${className} transition-all duration-1000 ease-out ${
+        isVisible ? "opacity-100 translate-y-0 scale-100" : "opacity-0 translate-y-10 scale-[0.98]"
+      }`}
+    >
+      {children}
+    </div>
+  );
+}
+
+// SVG Icon components
+function TerminalIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <polyline points="4 17 10 11 4 5"></polyline>
+      <line x1="12" y1="19" x2="20" y2="19"></line>
+    </svg>
+  );
+}
+
+function CodeIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <polyline points="16 18 22 12 16 6"></polyline>
+      <polyline points="8 6 2 12 8 18"></polyline>
+    </svg>
+  );
+}
+
+function CompassIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <circle cx="12" cy="12" r="10"></circle>
+      <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon>
+    </svg>
+  );
+}
+
+function AwardIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <circle cx="12" cy="8" r="7"></circle>
+      <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline>
+    </svg>
+  );
+}
+
+function UsersIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+      <circle cx="9" cy="7" r="4"></circle>
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+      <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+    </svg>
+  );
+}
+
+function SparklesIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"></path>
+    </svg>
+  );
+}
+
+function RocketIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"></path>
+      <path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-3.05 11a22.35 22.35 0 0 1-3.95 2z"></path>
+    </svg>
+  );
+}
+
+interface ClubEvent {
+  id: string;
+  isHero?: boolean;
+  title: string;
+  category: string;
+  stat?: string;
+  icon: React.ElementType;
+  description: string;
+  image: string;
+}
+
+const EVENTS: ClubEvent[] = [
+  {
+    id: "code-404",
+    isHero: true,
+    title: "Code 404",
+    category: "Flagship Tech Hunt",
+    stat: "Logic & Debugging",
+    icon: TerminalIcon,
+    description:
+      "Code 404 was an intense tech hunt & problem-solving challenge organized by Oyster Kode Club, testing logical reasoning, debugging precision, and rapid coding skills in an exhilarating timed format.",
+    image: "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?q=80&w=1200&auto=format&fit=crop",
+  },
+  {
+    id: "c-marathon",
+    title: "C Marathon",
+    category: "Bootcamp Series",
+    stat: "160+ Participants",
+    icon: CodeIcon,
+    description:
+      "C Marathon is Oyster Kode Club's beginner-friendly C programming bootcamp for first-year students of RIT. With 160+ participants, it offered hands-on coding sessions to build a strong foundation in C programming and problem-solving.",
+    image: "https://images.unsplash.com/photo-1531482615713-2afd69097998?q=80&w=1200&auto=format&fit=crop",
+  },
+  {
+    id: "domainophile",
+    title: "Domainophile",
+    category: "Domain Exploration",
+    stat: "140+ Participants",
+    icon: CompassIcon,
+    description:
+      "Domainophile is Oyster Kode Club's domain exploration event for RIT students, helping them explore various technical fields through expert guidance and interactive sessions. The event witnessed 140+ participants.",
+    image: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=1200&auto=format&fit=crop",
+  },
+  {
+    id: "codechef-collab",
+    title: "CodeChef Collaboration",
+    category: "Competitive Programming",
+    stat: "Global Exposure",
+    icon: AwardIcon,
+    description:
+      "CodeChef Collaboration: Oyster Kode Club proudly collaborated with CodeChef to organize coding events and promote competitive programming. This partnership provided students with industry-recognized exposure, challenging contests, and valuable learning opportunities.",
+    image: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?q=80&w=1200&auto=format&fit=crop",
+  },
+  {
+    id: "panel-discussion",
+    title: "Panel Discussion",
+    category: "Mentorship & Guidance",
+    stat: "Placed Senior Students",
+    icon: UsersIcon,
+    description:
+      "Panel Discussion: An interactive discussion session with our placed senior students, sharing career roadmaps, interview preparation strategies, placement insights, and real-world software engineering guidance.",
+    image: "https://images.unsplash.com/photo-1475721027785-f74eccf877e2?q=80&w=1200&auto=format&fit=crop",
+  },
+];
+
+const HIGHLIGHT_ITEMS: GalleryItem[] = [
+  {
+    id: "h-1",
+    title: "Code 404 Debugging Sprint",
+    src: "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?q=80&w=1200&auto=format&fit=crop",
+    aspectRatio: 16 / 10,
+    alt: "Code 404 Event Photo",
+  },
+  {
+    id: "h-2",
+    title: "C Marathon RIT Bootcamp",
+    src: "https://images.unsplash.com/photo-1531482615713-2afd69097998?q=80&w=1200&auto=format&fit=crop",
+    aspectRatio: 16 / 10,
+    alt: "C Marathon Bootcamp Photo",
+  },
+  {
+    id: "h-3",
+    title: "Domainophile Workshop",
+    src: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=1200&auto=format&fit=crop",
+    aspectRatio: 16 / 10,
+    alt: "Domainophile Event Photo",
+  },
+  {
+    id: "h-4",
+    title: "CodeChef Competitive Arena",
+    src: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?q=80&w=1200&auto=format&fit=crop",
+    aspectRatio: 16 / 10,
+    alt: "CodeChef Collaboration Photo",
+  },
+  {
+    id: "h-5",
+    title: "Placed Alumni Panel Session",
+    src: "https://images.unsplash.com/photo-1475721027785-f74eccf877e2?q=80&w=1200&auto=format&fit=crop",
+    aspectRatio: 16 / 10,
+    alt: "Panel Discussion Photo",
+  },
+  {
+    id: "h-6",
+    title: "Oyster Hackathon Podium Victory",
+    src: "https://images.unsplash.com/photo-1523240795612-9a054b0db644?q=80&w=1200&auto=format&fit=crop",
+    aspectRatio: 16 / 10,
+    alt: "Hackathon Podium Photo",
+  },
+];
 
 const REASONS = [
   {
@@ -29,18 +245,6 @@ const REASONS = [
     description:
       "Get guidance from alumni who are now at top companies and startups — your network starts here.",
   },
-  {
-    icon: "📚",
-    title: "Workshops & Talks",
-    description:
-      "Regular sessions on web dev, AI/ML, open source, DevOps, and more — always free, always hands-on.",
-  },
-  {
-    icon: "🌐",
-    title: "Shape the Tech Community",
-    description:
-      "Organise events, lead initiatives, and make your mark on the college's tech culture.",
-  },
 ];
 
 export default function WhyJoinUsPage() {
@@ -54,7 +258,7 @@ export default function WhyJoinUsPage() {
           ← Back to home
         </Link>
 
-        {/* Header */}
+        {/* Header (Preserved exactly as requested) */}
         <header className={styles.header}>
           <div className={styles.logoRow}>
             <Image src="/logo4.png" alt="Oyster Kode Club" width={40} height={40} />
@@ -69,26 +273,102 @@ export default function WhyJoinUsPage() {
           </p>
         </header>
 
-        {/* Reasons grid */}
-        <section className={styles.grid} aria-label="Reasons to join">
-          {REASONS.map((r) => (
-            <div key={r.title} className={styles.card}>
-              <span className={styles.cardIcon} aria-hidden="true">
-                {r.icon}
-              </span>
-              <h2 className={styles.cardTitle}>{r.title}</h2>
-              <p className={styles.cardDesc}>{r.description}</p>
+        {/* Major Events Bento Spotlight Grid (Non-interactive display) */}
+        <section className="flex flex-col gap-6" aria-label="Our Achievements and Major Events">
+          <ScrollRevealSection>
+            <div className={styles.sectionHeader}>
+              <div className="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-amber-400">
+                <SparklesIcon className="w-3.5 h-3.5" /> Club Milestones
+              </div>
+              <h2 className={styles.sectionTitle}>Major Events & Achievements</h2>
+              <p className={styles.sectionDesc}>
+                Explore our flagship hackathons, programming bootcamps, domain workshops, and industry collaborations.
+              </p>
             </div>
-          ))}
+          </ScrollRevealSection>
+
+          <div className={styles.bentoGrid}>
+            {EVENTS.map((evt, idx) => {
+              const IconComponent = evt.icon;
+              return (
+                <ScrollRevealSection key={evt.id} delay={idx * 120} className={evt.isHero ? styles.bentoHeroCard : ""}>
+                  <div className={styles.eventBentoCard}>
+                    <div className={styles.imageBanner}>
+                      <img
+                        src={evt.image}
+                        alt={evt.title}
+                        className={styles.eventImage}
+                        loading="lazy"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = `https://placehold.co/1200x800/18181b/ffffff?text=${encodeURIComponent(evt.title)}`;
+                        }}
+                      />
+                    </div>
+
+                    <div className={styles.cardContent}>
+                      <div className={styles.cardTitleRow}>
+                        <span className={styles.cardIcon}>
+                          <IconComponent className="w-4 h-4" />
+                        </span>
+                        <h3 className={styles.cardTitle}>{evt.title}</h3>
+                      </div>
+                      <p className={styles.cardDesc}>{evt.description}</p>
+                    </div>
+                  </div>
+                </ScrollRevealSection>
+              );
+            })}
+          </div>
         </section>
 
-        {/* CTA */}
-        <div className={styles.cta}>
-          <p className={styles.ctaText}>Ready to be part of something great?</p>
-          <Link href="/register" id="wju-register-cta" className={styles.ctaBtn}>
-            Apply Now →
-          </Link>
-        </div>
+        {/* Event Highlights Photo Showcase (Non-interactive clean gallery) */}
+        <ScrollRevealSection delay={200}>
+          <section className="flex flex-col gap-4" aria-label="Event Highlights Photo Gallery">
+            <div className={styles.sectionHeader}>
+              <div className="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-rose-400">
+                <RocketIcon className="w-3.5 h-3.5" /> Photo Showcase
+              </div>
+              <h2 className={styles.sectionTitle}>Event Highlights</h2>
+              <p className={styles.sectionDesc}>
+                Past event photos and tech session highlights.
+              </p>
+            </div>
+
+            <div className={styles.marqueeBox}>
+              <ImageGallery items={HIGHLIGHT_ITEMS} />
+            </div>
+          </section>
+        </ScrollRevealSection>
+
+        {/* Core Pillars / Reasons */}
+        <ScrollRevealSection delay={150}>
+          <section className="flex flex-col gap-4" aria-label="Reasons to join">
+            <div className={styles.sectionHeader}>
+              <h2 className={styles.sectionTitle}>What You Get</h2>
+            </div>
+            <div className={styles.reasonsGrid}>
+              {REASONS.map((r) => (
+                <div key={r.title} className={styles.reasonCard}>
+                  <span className={r.icon} aria-hidden="true">
+                    {r.icon}
+                  </span>
+                  <h3 className={r.title}>{r.title}</h3>
+                  <p className={r.description}>{r.description}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+        </ScrollRevealSection>
+
+        {/* CTA (Only interactive action button) */}
+        <ScrollRevealSection delay={200}>
+          <div className={styles.cta}>
+            <p className={styles.ctaText}>Ready to be part of something great?</p>
+            <Link href="/register" id="wju-register-cta" className={styles.ctaBtn}>
+              Apply Now →
+            </Link>
+          </div>
+        </ScrollRevealSection>
       </div>
     </main>
   );
