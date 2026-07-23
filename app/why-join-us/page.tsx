@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import styles from "./why-join-us.module.css";
 import { ImageGallery, GalleryItem } from "@/components/ui/image-gallery";
+import { CircularTestimonials, PlacementTestimonial } from "@/components/ui/circular-testimonials";
 
 // Slow & smooth scroll-reveal wrapper component
 function ScrollRevealSection({ children, className = "", delay = 0 }: { children: React.ReactNode; className?: string; delay?: number }) {
@@ -220,6 +221,59 @@ const HIGHLIGHT_ITEMS: GalleryItem[] = [
   },
 ];
 
+const PLACED_STUDENTS: PlacementTestimonial[] = [
+  {
+    name: "Shubham Ugalmogale",
+    companyName: "Cognizant",
+    src: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=1000&auto=format&fit=crop",
+  },
+  {
+    name: "Jaid Mulla",
+    companyName: "Bridgenext",
+    src: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1000&auto=format&fit=crop",
+  },
+  {
+    name: "Aryan Sutar",
+    companyName: "Zensar",
+    src: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=1000&auto=format&fit=crop",
+  },
+  {
+    name: "Vinayak Patil",
+    companyName: "Cognizant",
+    src: "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?q=80&w=1000&auto=format&fit=crop",
+  },
+  {
+    name: "Aryan Mali",
+    companyName: "Cognizant",
+    src: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?q=80&w=1000&auto=format&fit=crop",
+  },
+  {
+    name: "Pranav Desai",
+    companyName: "Xperate",
+    src: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=1000&auto=format&fit=crop",
+  },
+  {
+    name: "Harshal Kumbhar",
+    companyName: "Rsquaresoft",
+    src: "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?q=80&w=1000&auto=format&fit=crop",
+  },
+  {
+    name: "Meet Bhandari",
+    companyName: "Rsquaresoft",
+    src: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?q=80&w=1000&auto=format&fit=crop",
+  },
+  {
+    name: "Chaitanya Nikam",
+    companyName: "Rsquaresoft",
+    src: "https://images.unsplash.com/photo-1517841905240-472988babdf9?q=80&w=1000&auto=format&fit=crop",
+  },
+  {
+    name: "Tanaya Shinde",
+    companyName: "Atlas Copco",
+    src: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=1000&auto=format&fit=crop",
+  },
+];
+
 const REASONS = [
   {
     icon: "💻",
@@ -277,8 +331,8 @@ export default function WhyJoinUsPage() {
         <section className="flex flex-col gap-6" aria-label="Our Achievements and Major Events">
           <ScrollRevealSection>
             <div className={styles.sectionHeader}>
-              <div className="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-amber-400">
-                <SparklesIcon className="w-3.5 h-3.5" /> Club Milestones
+              <div className="inline-flex items-center text-xs font-extrabold uppercase tracking-wider text-amber-400">
+                Club Milestones
               </div>
               <h2 className={styles.sectionTitle}>Major Events & Achievements</h2>
               <p className={styles.sectionDesc}>
@@ -289,7 +343,6 @@ export default function WhyJoinUsPage() {
 
           <div className={styles.bentoGrid}>
             {EVENTS.map((evt, idx) => {
-              const IconComponent = evt.icon;
               return (
                 <ScrollRevealSection key={evt.id} delay={idx * 120} className={evt.isHero ? styles.bentoHeroCard : ""}>
                   <div className={styles.eventBentoCard}>
@@ -307,9 +360,6 @@ export default function WhyJoinUsPage() {
 
                     <div className={styles.cardContent}>
                       <div className={styles.cardTitleRow}>
-                        <span className={styles.cardIcon}>
-                          <IconComponent className="w-4 h-4" />
-                        </span>
                         <h3 className={styles.cardTitle}>{evt.title}</h3>
                       </div>
                       <p className={styles.cardDesc}>{evt.description}</p>
@@ -325,8 +375,8 @@ export default function WhyJoinUsPage() {
         <ScrollRevealSection delay={200}>
           <section className="flex flex-col gap-4" aria-label="Event Highlights Photo Gallery">
             <div className={styles.sectionHeader}>
-              <div className="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-rose-400">
-                <RocketIcon className="w-3.5 h-3.5" /> Photo Showcase
+              <div className="inline-flex items-center text-xs font-extrabold uppercase tracking-wider text-rose-400">
+                Photo Showcase
               </div>
               <h2 className={styles.sectionTitle}>Event Highlights</h2>
               <p className={styles.sectionDesc}>
@@ -336,6 +386,35 @@ export default function WhyJoinUsPage() {
 
             <div className={styles.marqueeBox}>
               <ImageGallery items={HIGHLIGHT_ITEMS} />
+            </div>
+          </section>
+        </ScrollRevealSection>
+
+        {/* Proud Placements Student Showcase */}
+        <ScrollRevealSection delay={200}>
+          <section className="flex flex-col gap-4" aria-label="Proud Placements Showcase">
+            <div className={styles.sectionHeader}>
+              <div className="inline-flex items-center text-xs font-extrabold uppercase tracking-wider text-amber-400">
+                Success Stories
+              </div>
+              <h2 className={styles.sectionTitle}>Proud Placements</h2>
+              <p className={styles.sectionDesc}>
+                Celebrating our talented Oyster Kode Club members placed in leading tech companies and global engineering teams.
+              </p>
+            </div>
+
+            <div className="bg-zinc-900/50 border border-white/10 rounded-3xl p-4 md:p-8 backdrop-blur-xl shadow-2xl overflow-hidden">
+              <CircularTestimonials
+                testimonials={PLACED_STUDENTS}
+                autoplay={true}
+                colors={{
+                  name: "#ffffff",
+                  company: "#f5a623",
+                  arrowBackground: "#18181b",
+                  arrowForeground: "#ffffff",
+                  arrowHoverBackground: "#f5a623",
+                }}
+              />
             </div>
           </section>
         </ScrollRevealSection>
