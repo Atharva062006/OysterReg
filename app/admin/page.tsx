@@ -1,30 +1,37 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { getAllRegistrations, Registration } from "@/lib/firebase";
+import {
+  getEvents,
+  createEvent,
+  toggleEventRegistration,
+  setActiveEvent,
+  deleteEvent,
+  getEventRegistrations,
+  Event,
+} from "@/lib/firebase";
 import StatCard from "@/components/StatCard";
-import RegistrationTable from "@/components/RegistrationTable";
-import AdminNav from "@/components/AdminNav";
 import styles from "./admin.module.css";
 
-const STATUS_LABELS: Record<string, string> = {
-  registered: "Registered",
-  aptitude_shortlisted: "Aptitude Shortlisted",
-  interview_shortlisted: "Interview Shortlisted",
-  selected: "Selected",
-  rejected: "Rejected",
-};
-
-export default function AdminDashboardPage() {
+export default function AdminHubPage() {
   const router = useRouter();
-  const [registrations, setRegistrations] = useState<Registration[]>([]);
+  const [events, setEvents] = useState<Event[]>([]);
+  const [candidateCounts, setCandidateCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // Auth gate — check sessionStorage
+  // Create Event Modal State
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [preset, setPreset] = useState<"recruitment" | "hackathon" | "workshop">("recruitment");
+  const [creating, setCreating] = useState(false);
+  const [formError, setFormError] = useState("");
+
+  // Auth gate
   useEffect(() => {
     if (typeof window !== "undefined") {
       const auth = sessionStorage.getItem("oyster_admin");
@@ -34,60 +41,124 @@ export default function AdminDashboardPage() {
     }
   }, [router]);
 
-  useEffect(() => {
-    getAllRegistrations()
-      .then(setRegistrations)
-      .catch((err) => {
-        console.error(err);
-        setError("Failed to load registrations. Check your Firebase config.");
-      })
-      .finally(() => setLoading(false));
+  const loadEvents = useCallback(async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const list = await getEvents();
+      setEvents(list);
+
+      // Fetch registration count for each event
+      const counts: Record<string, number> = {};
+      await Promise.all(
+        list.map(async (ev) => {
+          try {
+            const regs = await getEventRegistrations(ev.id);
+            counts[ev.id] = regs.length;
+          } catch (err) {
+            console.warn(`Could not load candidate registrations for ${ev.id}:`, err);
+            counts[ev.id] = 0;
+          }
+        })
+      );
+      setCandidateCounts(counts);
+    } catch (err: any) {
+      console.error("Error loading events:", err);
+      if (err?.code === "permission-denied" || err?.message?.includes("permissions")) {
+        setError("Note: Firestore Security Rules currently restrict access to custom events. Recruitment 2026 data is loaded by default.");
+      } else {
+        setError("Failed to load events. Please check your connection.");
+      }
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    loadEvents();
+  }, [loadEvents]);
 
   function handleSignOut() {
     sessionStorage.removeItem("oyster_admin");
     router.push("/admin/login");
   }
 
-  // ── Pipeline stage counts ──────────────────────────────────────────────
-  const total = registrations.length;
-  const byStatus = (s: string) =>
-    registrations.filter((r) => (r.status ?? "registered") === s).length;
+  async function handleCreateEvent(e: React.FormEvent) {
+    e.preventDefault();
+    setFormError("");
+    if (!name.trim()) {
+      setFormError("Event name is required.");
+      return;
+    }
 
-  const registeredCount = byStatus("registered");
-  const aptitudeCount = byStatus("aptitude_shortlisted");
-  const interviewCount = byStatus("interview_shortlisted");
-  const selectedCount = byStatus("selected");
-  const rejectedCount = byStatus("rejected");
+    setCreating(true);
+    try {
+      const newId = await createEvent(name.trim(), description.trim(), preset);
+      setShowCreateModal(false);
+      setName("");
+      setDescription("");
+      setPreset("recruitment");
+      await loadEvents();
+      router.push(`/admin/events/${newId}`);
+    } catch (err: any) {
+      console.error("Create event error:", err);
+      if (err?.code === "permission-denied" || err?.message?.includes("permission")) {
+        setFormError("Firestore Security Error: Please update your Firestore Security Rules in Firebase Console to allow read/write access to the 'events' collection.");
+      } else {
+        setFormError(err.message || "Failed to create event.");
+      }
+    } finally {
+      setCreating(false);
+    }
+  }
 
-  // ── Other stats ───────────────────────────────────────────────────────
-  const presentCount = registrations.filter((r) => r.present).length;
-  const male = registrations.filter((r) => r.gender === "Male").length;
-  const female = registrations.filter((r) => r.gender === "Female").length;
-  const other = total - male - female;
+  async function handleToggleRegistration(eventId: string, currentStatus: boolean) {
+    try {
+      await toggleEventRegistration(eventId, !currentStatus);
+      setEvents((prev) =>
+        prev.map((ev) => (ev.id === eventId ? { ...ev, registrationOpen: !currentStatus } : ev))
+      );
+    } catch {
+      alert("Failed to update registration status.");
+    }
+  }
 
-  const deptMap: Record<string, number> = {};
-  registrations.forEach((r) => {
-    deptMap[r.department] = (deptMap[r.department] || 0) + 1;
-  });
-  const deptEntries = Object.entries(deptMap).sort((a, b) => b[1] - a[1]);
+  async function handleSetActive(eventId: string) {
+    try {
+      await setActiveEvent(eventId);
+      setEvents((prev) =>
+        prev.map((ev) => ({ ...ev, isActive: ev.id === eventId }))
+      );
+    } catch {
+      alert("Failed to set active event.");
+    }
+  }
 
-  const yearMap: Record<string, number> = {};
-  registrations.forEach((r) => {
-    yearMap[r.year] = (yearMap[r.year] || 0) + 1;
-  });
-  const yearOrder = ["1st", "2nd", "3rd", "4th"];
-  const yearEntries = yearOrder
-    .filter((y) => yearMap[y])
-    .map((y) => [y, yearMap[y]] as [string, number]);
+  async function handleDeleteEvent(eventId: string, eventName: string) {
+    if (eventId === "recruitment-2026") {
+      alert("The default Recruitment 2026 event cannot be deleted.");
+      return;
+    }
+    if (!confirm(`Are you sure you want to delete "${eventName}"? This cannot be undone.`)) {
+      return;
+    }
+    try {
+      await deleteEvent(eventId);
+      setEvents((prev) => prev.filter((ev) => ev.id !== eventId));
+    } catch (err: any) {
+      alert(err.message || "Failed to delete event.");
+    }
+  }
 
-  const hasCodedCount = registrations.filter((r) => r.hasCodedBefore).length;
+  const totalEvents = events.length;
+  const activeEvent = events.find((ev) => ev.isActive) || events[0];
+  const totalCandidatesAcrossEvents = Object.values(candidateCounts).reduce((a, b) => a + b, 0);
 
   if (loading) {
     return (
       <div className={styles.loadingState}>
         <div className={styles.spinner} />
-        <p>Loading registrations…</p>
+        <p>Loading events hub…</p>
       </div>
     );
   }
@@ -101,7 +172,7 @@ export default function AdminDashboardPage() {
             <Image src="/logo1.svg" alt="Oyster Kode Club" width={32} height={32} />
             <div>
               <div className={styles.breadcrumb}>Oyster Kode Club</div>
-              <h1 className={styles.pageTitle}>Admin Dashboard</h1>
+              <h1 className={styles.pageTitle}>Events Management Hub</h1>
             </div>
           </div>
           <button
@@ -114,156 +185,225 @@ export default function AdminDashboardPage() {
         </div>
       </header>
 
-      {/* ── Pipeline Nav ── */}
-      <AdminNav />
-
       <main className={styles.main}>
-        {error && (
-          <div className={styles.errorBanner} role="alert">
-            {error}
-          </div>
-        )}
+        {error && <div className={styles.errorBanner} role="alert">{error}</div>}
 
-        {/* ── Pipeline Flow ── */}
+        {/* ── Section Header & Overview ── */}
         <section className={styles.section}>
-          <h2 className={styles.sectionTitle}>Recruitment Pipeline</h2>
-          <div className={styles.pipeline}>
-            {[
-              { label: "Registered", count: registeredCount, href: "/admin/aptitude", color: "default" },
-              { label: "Aptitude Shortlisted", count: aptitudeCount, href: "/admin/interview", color: "blue" },
-              { label: "Interview Shortlisted", count: interviewCount, href: "/admin/selected", color: "amber" },
-              { label: "Selected", count: selectedCount, href: "/admin/selected", color: "green" },
-            ].map(({ label, count, href, color }, i) => (
-              <div key={label} className={styles.pipelineStep}>
-                <Link href={href} className={`${styles.pipelineCard} ${styles[`pipeline_${color}`]}`}>
-                  <span className={styles.pipelineCount}>{count}</span>
-                  <span className={styles.pipelineLabel}>{label}</span>
-                </Link>
-                {i < 3 && <span className={styles.pipelineArrow}>→</span>}
-              </div>
-            ))}
+          <div className="flex-between" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
+            <div>
+              <h2 className={styles.sectionTitle}>All Events</h2>
+              <p style={{ color: "var(--text-secondary)", fontSize: "0.9375rem" }}>
+                Create, customize, and manage registration processes for every Oyster event without touching any source code.
+              </p>
+            </div>
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="btn btn-primary"
+              id="create-new-event-btn"
+            >
+              + Create New Event
+            </button>
           </div>
-          {rejectedCount > 0 && (
-            <p className={styles.rejectedNote}>
-              {rejectedCount} candidate{rejectedCount !== 1 ? "s" : ""} rejected across all stages.
-            </p>
-          )}
-        </section>
 
-        {/* ── Stats Grid ── */}
-        <section className={styles.section}>
-          <h2 className={styles.sectionTitle}>Overview</h2>
-          <div className={styles.statsGrid}>
-            <StatCard label="Total Registrations" value={total} />
+          <div className={styles.statsGrid} style={{ marginTop: "1.5rem" }}>
+            <StatCard label="Total Events" value={totalEvents} />
             <StatCard
-              label="Attendance Marked"
-              value={presentCount}
-              sub={total > 0 ? `${Math.round((presentCount / total) * 100)}% of total` : "—"}
+              label="Active Primary Registration"
+              value={activeEvent ? activeEvent.name : "None"}
+              sub={activeEvent?.registrationOpen ? "Registrations Open" : "Registrations Closed"}
             />
-            <StatCard
-              label="Coded Before"
-              value={hasCodedCount}
-              sub={total > 0 ? `${Math.round((hasCodedCount / total) * 100)}% of total` : "—"}
-            />
+            <StatCard label="Total Registrations" value={totalCandidatesAcrossEvents} />
           </div>
         </section>
 
-        {/* ── Gender + Year breakdown ── */}
+        {/* ── Events Grid ── */}
         <section className={styles.section}>
-          <div className={styles.breakdownGrid}>
-            {/* Gender */}
-            <div className={styles.breakdownCard}>
-              <h2 className={styles.cardTitle}>Gender</h2>
-              <ul className={styles.breakdownList}>
-                <li>
-                  <span className={styles.breakdownLabel}>Male</span>
-                  <span className={styles.breakdownBar}>
-                    <span
-                      className={styles.barFill}
-                      style={{ width: total ? `${(male / total) * 100}%` : "0%" }}
-                    />
-                  </span>
-                  <span className={styles.breakdownCount}>{male}</span>
-                </li>
-                <li>
-                  <span className={styles.breakdownLabel}>Female</span>
-                  <span className={styles.breakdownBar}>
-                    <span
-                      className={styles.barFill}
-                      style={{ width: total ? `${(female / total) * 100}%` : "0%" }}
-                    />
-                  </span>
-                  <span className={styles.breakdownCount}>{female}</span>
-                </li>
-                {other > 0 && (
-                  <li>
-                    <span className={styles.breakdownLabel}>Other</span>
-                    <span className={styles.breakdownBar}>
-                      <span
-                        className={styles.barFill}
-                        style={{ width: total ? `${(other / total) * 100}%` : "0%" }}
-                      />
-                    </span>
-                    <span className={styles.breakdownCount}>{other}</span>
-                  </li>
-                )}
-              </ul>
-            </div>
+          <div className={styles.eventsGrid}>
+            {events.map((ev) => {
+              const count = candidateCounts[ev.id] || 0;
+              return (
+                <div
+                  key={ev.id}
+                  className={`${styles.eventCard} ${ev.isActive ? styles.eventCardActive : ""}`}
+                >
+                  <div className={styles.eventHeader}>
+                    <div className={styles.badgeRow}>
+                      {ev.isActive && <span className={styles.badgeActive}>Active Site Registration</span>}
+                      {ev.registrationOpen ? (
+                        <span className={styles.badgeOpen}>Open</span>
+                      ) : (
+                        <span className={styles.badgeClosed}>Closed</span>
+                      )}
+                    </div>
+                    <h3 className={styles.eventTitle}>{ev.name}</h3>
+                    <p className={styles.eventDesc}>{ev.description || "No description provided."}</p>
+                  </div>
 
-            {/* Year */}
-            <div className={styles.breakdownCard}>
-              <h2 className={styles.cardTitle}>Year of Study</h2>
-              <ul className={styles.breakdownList}>
-                {yearEntries.length === 0 ? (
-                  <li className={styles.emptyNote}>No data yet</li>
-                ) : (
-                  yearEntries.map(([year, count]) => (
-                    <li key={year}>
-                      <span className={styles.breakdownLabel}>{year} Year</span>
-                      <span className={styles.breakdownBar}>
-                        <span
-                          className={styles.barFill}
-                          style={{ width: total ? `${(count / total) * 100}%` : "0%" }}
-                        />
-                      </span>
-                      <span className={styles.breakdownCount}>{count}</span>
-                    </li>
-                  ))
-                )}
-              </ul>
-            </div>
+                  <div className={styles.eventMeta}>
+                    <span>Total Registrations</span>
+                    <span className={styles.eventMetaValue}>{count}</span>
+                  </div>
 
-            {/* Department */}
-            <div className={styles.breakdownCard}>
-              <h2 className={styles.cardTitle}>Department</h2>
-              <ul className={styles.breakdownList}>
-                {deptEntries.length === 0 ? (
-                  <li className={styles.emptyNote}>No data yet</li>
-                ) : (
-                  deptEntries.map(([dept, count]) => (
-                    <li key={dept}>
-                      <span className={styles.breakdownLabel}>{dept}</span>
-                      <span className={styles.breakdownBar}>
-                        <span
-                          className={styles.barFill}
-                          style={{ width: total ? `${(count / total) * 100}%` : "0%" }}
-                        />
-                      </span>
-                      <span className={styles.breakdownCount}>{count}</span>
-                    </li>
-                  ))
-                )}
-              </ul>
-            </div>
+                  <div className={styles.eventControls}>
+                    <div className={styles.toggleRow}>
+                      <span>Registration Gate:</span>
+                      <button
+                        onClick={() => handleToggleRegistration(ev.id, ev.registrationOpen)}
+                        className={`btn btn-sm ${ev.registrationOpen ? "btn-outline" : "btn-primary"}`}
+                        style={{ fontSize: "0.75rem", padding: "0.25rem 0.5rem" }}
+                      >
+                        {ev.registrationOpen ? "Close Registrations" : "Open Registrations"}
+                      </button>
+                    </div>
+
+                    {!ev.isActive && (
+                      <div className={styles.toggleRow}>
+                        <span>Primary Site Registration:</span>
+                        <button
+                          onClick={() => handleSetActive(ev.id)}
+                          className="btn btn-sm btn-outline"
+                          style={{ fontSize: "0.75rem", padding: "0.25rem 0.5rem" }}
+                        >
+                          Set Active
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className={styles.eventActions}>
+                    <Link
+                      href={`/admin/events/${ev.id}`}
+                      className="btn btn-primary"
+                      style={{ flex: 1, textAlign: "center", textDecoration: "none" }}
+                    >
+                      Manage Panel →
+                    </Link>
+                    {ev.id !== "recruitment-2026" && (
+                      <button
+                        onClick={() => handleDeleteEvent(ev.id, ev.name)}
+                        className="btn btn-outline"
+                        style={{ color: "var(--danger)", borderColor: "rgba(239, 68, 68, 0.3)" }}
+                        title="Delete Event"
+                      >
+                        🗑️
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
-        </section>
-
-        {/* ── All Registrations Table ── */}
-        <section className={styles.section}>
-          <h2 className={styles.sectionTitle}>All Registrations</h2>
-          <RegistrationTable initialData={registrations} />
         </section>
       </main>
+
+      {/* ── Create Event Modal ── */}
+      {showCreateModal && (
+        <div className={styles.modalOverlay} onClick={() => setShowCreateModal(false)}>
+          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h3 className={styles.modalTitle}>Create New Event</h3>
+              <button
+                onClick={() => setShowCreateModal(false)}
+                style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: "1.25rem", cursor: "pointer" }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateEvent} className="flex-col gap-4" style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+              <div>
+                <label className={styles.label} style={{ fontSize: "0.875rem", fontWeight: 600, color: "var(--text-secondary)" }}>
+                  Event Name *
+                </label>
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="e.g. CodeSprint 2026, AI Workshop"
+                  required
+                  style={{
+                    width: "100%",
+                    padding: "0.75rem 1rem",
+                    background: "var(--bg)",
+                    border: "1px solid var(--border)",
+                    borderRadius: "var(--radius-md)",
+                    color: "var(--text-primary)",
+                    marginTop: "0.375rem",
+                  }}
+                />
+              </div>
+
+              <div>
+                <label className={styles.label} style={{ fontSize: "0.875rem", fontWeight: 600, color: "var(--text-secondary)" }}>
+                  Description
+                </label>
+                <textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Brief description of the event..."
+                  rows={3}
+                  style={{
+                    width: "100%",
+                    padding: "0.75rem 1rem",
+                    background: "var(--bg)",
+                    border: "1px solid var(--border)",
+                    borderRadius: "var(--radius-md)",
+                    color: "var(--text-primary)",
+                    marginTop: "0.375rem",
+                  }}
+                />
+              </div>
+
+              <div>
+                <label className={styles.label} style={{ fontSize: "0.875rem", fontWeight: 600, color: "var(--text-secondary)" }}>
+                  Form & Pipeline Template Preset
+                </label>
+                <select
+                  value={preset}
+                  onChange={(e) => setPreset(e.target.value as any)}
+                  style={{
+                    width: "100%",
+                    padding: "0.75rem 1rem",
+                    background: "var(--bg)",
+                    border: "1px solid var(--border)",
+                    borderRadius: "var(--radius-md)",
+                    color: "var(--text-primary)",
+                    marginTop: "0.375rem",
+                  }}
+                >
+                  <option value="recruitment">Standard Recruitment (Registered → Aptitude → Interview → Selected)</option>
+                  <option value="hackathon">Hackathon / Project Contest (Registered → Idea Shortlist → Check-in → Winner)</option>
+                  <option value="workshop">Workshop / Event RSVP (Registered → RSVP Confirmed → Attended)</option>
+                </select>
+              </div>
+
+              {formError && (
+                <p style={{ color: "var(--danger)", fontSize: "0.875rem" }} role="alert">
+                  {formError}
+                </p>
+              )}
+
+              <div style={{ display: "flex", gap: "0.75rem", justifyContent: "flex-end", marginTop: "0.5rem" }}>
+                <button
+                  type="button"
+                  onClick={() => setShowCreateModal(false)}
+                  className="btn btn-outline"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={creating}
+                  className="btn btn-primary"
+                >
+                  {creating ? "Creating Event..." : "Create Event"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

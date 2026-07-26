@@ -10,7 +10,7 @@ interface Option {
 interface FormFieldProps {
   id: string;
   label: string;
-  type?: "text" | "email" | "tel" | "url" | "textarea" | "select" | "radio";
+  type?: "text" | "number" | "email" | "tel" | "url" | "textarea" | "select" | "radio" | "checkbox";
   options?: Option[];
   required?: boolean;
   placeholder?: string;

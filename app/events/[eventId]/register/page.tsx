@@ -1,17 +1,24 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, use } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import {
-  getActiveEvent,
+  getEventById,
   submitEventRegistration,
   Event,
 } from "@/lib/firebase";
 import DynamicFormRenderer from "@/components/DynamicFormRenderer";
-import styles from "./register.module.css";
+import styles from "@/app/register/register.module.css";
 
-export default function RegistrationPage() {
+interface EventRegisterPageProps {
+  params: Promise<{ eventId: string }>;
+}
+
+export default function EventRegisterPage({ params }: EventRegisterPageProps) {
+  const resolvedParams = use(params);
+  const eventId = resolvedParams.eventId;
+
   const router = useRouter();
   const [event, setEvent] = useState<Event | null>(null);
   const [formData, setFormData] = useState<Record<string, any>>({});
@@ -20,22 +27,21 @@ export default function RegistrationPage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
-  const loadActiveEvent = useCallback(async () => {
+  const loadEvent = useCallback(async () => {
     setLoading(true);
     try {
-      const active = await getActiveEvent();
-      setEvent(active);
-    } catch (err) {
-      console.error(err);
-      setSubmitError("Failed to load active event registration form.");
+      const ev = await getEventById(eventId);
+      setEvent(ev);
+    } catch {
+      setSubmitError("Failed to load event registration form.");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [eventId]);
 
   useEffect(() => {
-    loadActiveEvent();
-  }, [loadActiveEvent]);
+    loadEvent();
+  }, [loadEvent]);
 
   function handleChange(fieldId: string, value: any) {
     setFormData((prev) => ({ ...prev, [fieldId]: value }));
@@ -73,20 +79,17 @@ export default function RegistrationPage() {
     const errs = validate();
     if (Object.keys(errs).length > 0) {
       setErrors(errs);
-      const firstErrorField = document.querySelector("[aria-invalid], [role='alert']");
-      firstErrorField?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
 
-    if (!event) return;
     setSubmitting(true);
     setSubmitError("");
 
     try {
-      await submitEventRegistration(event.id, formData);
+      await submitEventRegistration(eventId, formData);
       router.push("/success");
     } catch (err: any) {
-      setSubmitError(err.message || "Something went wrong. Please try again.");
+      setSubmitError(err.message || "Failed to submit registration. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -106,8 +109,8 @@ export default function RegistrationPage() {
     return (
       <main className={styles.main}>
         <div className={styles.container} style={{ textAlign: "center", padding: "4rem 0" }}>
-          <h1 className={styles.title}>No Active Registration</h1>
-          <p className={styles.subtitle}>There are currently no active registrations open.</p>
+          <h1 className={styles.title}>Event Not Found</h1>
+          <p className={styles.subtitle}>The requested event registration form does not exist or has been removed.</p>
         </div>
       </main>
     );
@@ -139,7 +142,7 @@ export default function RegistrationPage() {
               Registrations Closed
             </h2>
             <p style={{ color: "var(--text-secondary)", fontSize: "0.9375rem", maxWidth: "460px", margin: "0 auto 1.5rem" }}>
-              {event.closedMessage || "Registrations for this event are currently closed. We will reach out when new opportunities open!"}
+              {event.closedMessage || "Registrations for this event are currently closed. Please reach out to Oyster Kode Club for details."}
             </p>
           </div>
         </div>
@@ -158,7 +161,7 @@ export default function RegistrationPage() {
           </div>
           <h1 className={styles.title}>{event.name}</h1>
           <p className={styles.subtitle}>
-            {event.description || "Fill out the form below to apply. We will reach out to shortlisted candidates with details."}
+            {event.description || "Fill out the form below to apply. We look forward to seeing your submission."}
           </p>
         </header>
 
@@ -187,7 +190,7 @@ export default function RegistrationPage() {
               {submitting ? "Submitting Application..." : "Submit Application"}
             </button>
             <p className={styles.disclaimer}>
-              Your information will only be used for selection & organization purposes.
+              Your information will only be used for {event.name} selection & organization purposes.
             </p>
           </div>
         </form>
