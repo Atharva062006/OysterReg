@@ -8,7 +8,6 @@ import React, {
   useCallback,
 } from "react";
 
-// Inline SVG Icons for 100% self-contained dependency-free reliability
 function ArrowLeftIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg
@@ -94,7 +93,6 @@ export const CircularTestimonials = ({
   colors = {},
   fontSizes = {},
 }: CircularTestimonialsProps) => {
-  // Color & font config
   const colorName = colors.name ?? "#ffffff";
   const colorCompany = colors.company ?? "#f5a623";
   const colorArrowBg = colors.arrowBackground ?? "#1f1f23";
@@ -103,7 +101,6 @@ export const CircularTestimonials = ({
   const fontSizeName = fontSizes.name ?? "1.75rem";
   const fontSizeCompany = fontSizes.company ?? "1.15rem";
 
-  // State
   const [activeIndex, setActiveIndex] = useState(0);
   const [hoverPrev, setHoverPrev] = useState(false);
   const [hoverNext, setHoverNext] = useState(false);
@@ -119,14 +116,13 @@ export const CircularTestimonials = ({
     [activeIndex, testimonials]
   );
 
-  // Trigger smooth slow fade-in animation on slide change
+  // Trigger clean & stable text crossfade on index change
   useEffect(() => {
     setIsAnimating(true);
-    const timer = setTimeout(() => setIsAnimating(false), 800);
+    const timer = setTimeout(() => setIsAnimating(false), 400);
     return () => clearTimeout(timer);
   }, [activeIndex]);
 
-  // Responsive gap calculation
   useEffect(() => {
     function handleResize() {
       if (imageContainerRef.current) {
@@ -138,19 +134,18 @@ export const CircularTestimonials = ({
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Autoplay (Slow 9-second interval)
+  // Smooth slow autoplay (8 seconds)
   useEffect(() => {
     if (autoplay && testimonialsLength > 0) {
       autoplayIntervalRef.current = setInterval(() => {
         setActiveIndex((prev) => (prev + 1) % testimonialsLength);
-      }, 9000);
+      }, 8000);
     }
     return () => {
       if (autoplayIntervalRef.current) clearInterval(autoplayIntervalRef.current);
     };
   }, [autoplay, testimonialsLength]);
 
-  // Navigation handlers
   const handleNext = useCallback(() => {
     setActiveIndex((prev) => (prev + 1) % testimonialsLength);
     if (autoplayIntervalRef.current) clearInterval(autoplayIntervalRef.current);
@@ -161,7 +156,6 @@ export const CircularTestimonials = ({
     if (autoplayIntervalRef.current) clearInterval(autoplayIntervalRef.current);
   }, [testimonialsLength]);
 
-  // Keyboard navigation
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === "ArrowLeft") handlePrev();
@@ -171,13 +165,15 @@ export const CircularTestimonials = ({
     return () => window.removeEventListener("keydown", handleKey);
   }, [handleNext, handlePrev]);
 
-  // Compute transforms for each image
+  // Compute smooth slow 3D transforms for each photo
   function getImageStyle(index: number): React.CSSProperties {
     const gap = calculateGap(containerWidth);
-    const maxStickUp = gap * 0.7;
+    const maxStickUp = gap * 0.5;
     const isActive = index === activeIndex;
     const isLeft = (activeIndex - 1 + testimonialsLength) % testimonialsLength === index;
     const isRight = (activeIndex + 1) % testimonialsLength === index;
+
+    const smoothEase = "all 1.1s cubic-bezier(0.16, 1, 0.3, 1)";
 
     if (isActive) {
       return {
@@ -185,25 +181,28 @@ export const CircularTestimonials = ({
         opacity: 1,
         pointerEvents: "auto",
         transform: `translateX(0px) translateY(0px) scale(1) rotateY(0deg)`,
-        transition: "all 0.8s cubic-bezier(.4,2,.3,1)",
+        transition: smoothEase,
+        filter: "brightness(1) contrast(1)",
       };
     }
     if (isLeft) {
       return {
         zIndex: 2,
-        opacity: 0.8,
+        opacity: 0.7,
         pointerEvents: "auto",
-        transform: `translateX(-${gap}px) translateY(-${maxStickUp}px) scale(0.85) rotateY(12deg)`,
-        transition: "all 0.8s cubic-bezier(.4,2,.3,1)",
+        transform: `translateX(-${gap}px) translateY(-${maxStickUp}px) scale(0.86) rotateY(10deg)`,
+        transition: smoothEase,
+        filter: "brightness(0.7) contrast(0.95)",
       };
     }
     if (isRight) {
       return {
         zIndex: 2,
-        opacity: 0.8,
+        opacity: 0.7,
         pointerEvents: "auto",
-        transform: `translateX(${gap}px) translateY(-${maxStickUp}px) scale(0.85) rotateY(-12deg)`,
-        transition: "all 0.8s cubic-bezier(.4,2,.3,1)",
+        transform: `translateX(${gap}px) translateY(-${maxStickUp}px) scale(0.86) rotateY(-10deg)`,
+        transition: smoothEase,
+        filter: "brightness(0.7) contrast(0.95)",
       };
     }
     return {
@@ -211,7 +210,8 @@ export const CircularTestimonials = ({
       opacity: 0,
       pointerEvents: "none",
       transform: `scale(0.7)`,
-      transition: "all 0.8s cubic-bezier(.4,2,.3,1)",
+      transition: smoothEase,
+      filter: "brightness(0.5)",
     };
   }
 
@@ -222,29 +222,34 @@ export const CircularTestimonials = ({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center">
         {/* Images Perspective Container */}
         <div
-          className="relative w-full max-w-[260px] sm:max-w-[300px] h-[320px] sm:h-[360px] [perspective:1000px] flex items-center justify-center mx-auto"
+          className="relative w-full max-w-[270px] sm:max-w-[310px] aspect-[4/5] [perspective:1000px] flex items-center justify-center mx-auto"
           ref={imageContainerRef}
         >
           {testimonials.map((testimonial, index) => (
-            <img
+            <div
               key={`${testimonial.name}-${index}`}
-              src={testimonial.src}
-              alt={testimonial.name}
-              className="absolute w-full h-full object-cover rounded-3xl shadow-2xl border-2 border-white/10"
+              className="absolute w-full h-full rounded-3xl overflow-hidden shadow-2xl border-2 border-white/10 bg-zinc-950 transition-all"
               style={getImageStyle(index)}
-              onError={(e) => {
-                (e.target as HTMLImageElement).src = `https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=800&auto=format&fit=crop`;
-              }}
-            />
+            >
+              <img
+                src={testimonial.src}
+                alt={testimonial.name}
+                className="w-full h-full object-cover object-top transition-transform duration-1000 ease-out hover:scale-105"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = `/logo4.png`;
+                }}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
+            </div>
           ))}
         </div>
 
-        {/* Student Name & Plain Company Name Container */}
-        <div className="flex flex-col justify-between space-y-6 sm:space-y-8">
+        {/* Student Name & Company Text Container - Stable & Stationary */}
+        <div className="flex flex-col justify-between space-y-6 sm:space-y-8 min-h-[140px]">
           <div
             key={activeIndex}
-            className={`flex flex-col gap-2 transition-all duration-700 ease-out ${
-              isAnimating ? "opacity-0 translate-y-3" : "opacity-100 translate-y-0"
+            className={`flex flex-col gap-2.5 transition-opacity duration-400 ease-in-out ${
+              isAnimating ? "opacity-0" : "opacity-100"
             }`}
           >
             {/* Placed Student Name */}
@@ -271,11 +276,11 @@ export const CircularTestimonials = ({
             )}
           </div>
 
-          {/* Navigation Controls with Balanced Spacing */}
+          {/* Navigation Controls */}
           <div className="flex items-center gap-4 pt-4 sm:pt-5 mt-6 sm:mt-8 border-t border-white/5">
             <button
               onClick={handlePrev}
-              className="w-11 h-11 rounded-full flex items-center justify-center transition-all duration-300 shadow-md border border-white/10 hover:scale-110 active:scale-95"
+              className="w-11 h-11 rounded-full flex items-center justify-center transition-all duration-500 shadow-md border border-white/10 hover:scale-110 active:scale-95"
               style={{
                 backgroundColor: hoverPrev ? colorArrowHoverBg : colorArrowBg,
                 color: colorArrowFg,
@@ -289,7 +294,7 @@ export const CircularTestimonials = ({
 
             <button
               onClick={handleNext}
-              className="w-11 h-11 rounded-full flex items-center justify-center transition-all duration-300 shadow-md border border-white/10 hover:scale-110 active:scale-95"
+              className="w-11 h-11 rounded-full flex items-center justify-center transition-all duration-500 shadow-md border border-white/10 hover:scale-110 active:scale-95"
               style={{
                 backgroundColor: hoverNext ? colorArrowHoverBg : colorArrowBg,
                 color: colorArrowFg,
@@ -307,7 +312,7 @@ export const CircularTestimonials = ({
                 <button
                   key={i}
                   onClick={() => setActiveIndex(i)}
-                  className={`h-2 rounded-full transition-all duration-500 ${
+                  className={`h-2 rounded-full transition-all duration-700 ${
                     i === activeIndex ? "w-6 bg-amber-400" : "w-2 bg-white/20 hover:bg-white/40"
                   }`}
                   aria-label={`Go to slide ${i + 1}`}

@@ -132,7 +132,7 @@ const EVENTS: ClubEvent[] = [
     icon: TerminalIcon,
     description:
       "Code 404 was an intense tech hunt & problem-solving challenge organized by Oyster Kode Club, testing logical reasoning, debugging precision, and rapid coding skills in an exhilarating timed format.",
-    image: "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?q=80&w=1200&auto=format&fit=crop",
+    image: "/photos/code-404.png",
   },
   {
     id: "c-marathon",
@@ -142,7 +142,7 @@ const EVENTS: ClubEvent[] = [
     icon: CodeIcon,
     description:
       "C Marathon is Oyster Kode Club's beginner-friendly C programming bootcamp for first-year students of RIT. With 160+ participants, it offered hands-on coding sessions to build a strong foundation in C programming and problem-solving.",
-    image: "https://images.unsplash.com/photo-1531482615713-2afd69097998?q=80&w=1200&auto=format&fit=crop",
+    image: "/photos/cmarathonhd1.png",
   },
   {
     id: "domainophile",
@@ -152,7 +152,7 @@ const EVENTS: ClubEvent[] = [
     icon: CompassIcon,
     description:
       "Domainophile is Oyster Kode Club's domain exploration event for RIT students, helping them explore various technical fields through expert guidance and interactive sessions. The event witnessed 140+ participants.",
-    image: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=1200&auto=format&fit=crop",
+    image: "/photos/domainophile.png",
   },
   {
     id: "codechef-collab",
@@ -162,7 +162,7 @@ const EVENTS: ClubEvent[] = [
     icon: AwardIcon,
     description:
       "CodeChef Collaboration: Oyster Kode Club proudly collaborated with CodeChef to organize coding events and promote competitive programming. This partnership provided students with industry-recognized exposure, challenging contests, and valuable learning opportunities.",
-    image: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?q=80&w=1200&auto=format&fit=crop",
+    image: "/photos/cmarathonhd2.png",
   },
   {
     id: "panel-discussion",
@@ -172,52 +172,46 @@ const EVENTS: ClubEvent[] = [
     icon: UsersIcon,
     description:
       "Panel Discussion: An interactive discussion session with our placed senior students, sharing career roadmaps, interview preparation strategies, placement insights, and real-world software engineering guidance.",
-    image: "https://images.unsplash.com/photo-1475721027785-f74eccf877e2?q=80&w=1200&auto=format&fit=crop",
+    image: "/photos/panel-discussion.png",
   },
 ];
 
 const HIGHLIGHT_ITEMS: GalleryItem[] = [
   {
     id: "h-1",
-    title: "Code 404 Debugging Sprint",
-    src: "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?q=80&w=1200&auto=format&fit=crop",
+    src: "/photos/1.png",
     aspectRatio: 16 / 10,
-    alt: "Code 404 Event Photo",
+    alt: "Event Highlight 1",
   },
   {
     id: "h-2",
-    title: "C Marathon RIT Bootcamp",
-    src: "https://images.unsplash.com/photo-1531482615713-2afd69097998?q=80&w=1200&auto=format&fit=crop",
+    src: "/photos/2.png",
     aspectRatio: 16 / 10,
-    alt: "C Marathon Bootcamp Photo",
+    alt: "Event Highlight 2",
   },
   {
     id: "h-3",
-    title: "Domainophile Workshop",
-    src: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=1200&auto=format&fit=crop",
+    src: "/photos/3.png",
     aspectRatio: 16 / 10,
-    alt: "Domainophile Event Photo",
+    alt: "Event Highlight 3",
   },
   {
     id: "h-4",
-    title: "CodeChef Competitive Arena",
-    src: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?q=80&w=1200&auto=format&fit=crop",
+    src: "/photos/4.jpg",
     aspectRatio: 16 / 10,
-    alt: "CodeChef Collaboration Photo",
+    alt: "Event Highlight 4",
   },
   {
     id: "h-5",
-    title: "Placed Alumni Panel Session",
-    src: "https://images.unsplash.com/photo-1475721027785-f74eccf877e2?q=80&w=1200&auto=format&fit=crop",
+    src: "/photos/5.png",
     aspectRatio: 16 / 10,
-    alt: "Panel Discussion Photo",
+    alt: "Event Highlight 5",
   },
   {
     id: "h-6",
-    title: "Oyster Hackathon Podium Victory",
-    src: "https://images.unsplash.com/photo-1523240795612-9a054b0db644?q=80&w=1200&auto=format&fit=crop",
+    src: "/photos/6.png",
     aspectRatio: 16 / 10,
-    alt: "Hackathon Podium Photo",
+    alt: "Event Highlight 6",
   },
 ];
 
@@ -225,52 +219,52 @@ const PLACED_STUDENTS: PlacementTestimonial[] = [
   {
     name: "Shubham Ugalmogale",
     companyName: "Cognizant",
-    src: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=1000&auto=format&fit=crop",
+    src: "/photos/shubham-ugalmogale.jpeg",
   },
   {
     name: "Jaid Mulla",
     companyName: "Bridgenext",
-    src: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1000&auto=format&fit=crop",
+    src: "/photos/javed-mulla.jpeg",
   },
   {
     name: "Aryan Sutar",
     companyName: "Zensar",
-    src: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=1000&auto=format&fit=crop",
+    src: "/photos/aryan-sutar.jpeg",
   },
   {
     name: "Vinayak Patil",
     companyName: "Cognizant",
-    src: "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?q=80&w=1000&auto=format&fit=crop",
+    src: "/photos/vinayak-patil.jpeg",
   },
   {
     name: "Aryan Mali",
     companyName: "Cognizant",
-    src: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?q=80&w=1000&auto=format&fit=crop",
+    src: "/photos/aryan-mali.jpeg",
   },
   {
     name: "Pranav Desai",
     companyName: "Xperate",
-    src: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=1000&auto=format&fit=crop",
+    src: "/photos/pranav-desai.jpeg",
   },
   {
     name: "Harshal Kumbhar",
     companyName: "Rsquaresoft",
-    src: "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?q=80&w=1000&auto=format&fit=crop",
+    src: "/photos/harshal.jpeg",
   },
   {
     name: "Meet Bhandari",
     companyName: "Rsquaresoft",
-    src: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?q=80&w=1000&auto=format&fit=crop",
+    src: "/photos/meet-bhandari.jpeg",
   },
   {
     name: "Chaitanya Nikam",
     companyName: "Rsquaresoft",
-    src: "https://images.unsplash.com/photo-1517841905240-472988babdf9?q=80&w=1000&auto=format&fit=crop",
+    src: "/photos/chaitanya-nikam.jpeg",
   },
   {
     name: "Tanaya Shinde",
     companyName: "Atlas Copco",
-    src: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=1000&auto=format&fit=crop",
+    src: "/photos/tanaya-shinde.jpeg",
   },
 ];
 

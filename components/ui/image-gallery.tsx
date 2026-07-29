@@ -106,21 +106,6 @@ function PhotoCard({ item, index }: PhotoCardProps) {
 					className="size-full object-cover opacity-100 transition-transform duration-1000 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-105 block will-change-transform transform-gpu"
 				/>
 			</AspectRatio>
-
-			{/* Clean Overlay Title Only */}
-			{item.title && (
-				<div 
-					style={{ transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)' }}
-					className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent p-3.5 flex flex-col justify-end z-10 transition-colors duration-1000"
-				>
-					<h3 
-						style={{ transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)' }}
-						className="text-xs font-extrabold text-white/95 truncate group-hover:text-amber-400 transition-colors duration-1000"
-					>
-						{item.title}
-					</h3>
-				</div>
-			)}
 		</div>
 	);
 }
