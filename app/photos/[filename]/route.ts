@@ -38,20 +38,22 @@ function syncPhotosToPublic() {
 
         const ext = path.extname(file);
         const stem = file.replace(/\.[^/.]+$/, "");
-        const slugStem = stem.toLowerCase().trim().replace(/\s+/g, "-");
-        const slugFileName = `${slugStem}${ext.toLowerCase()}`;
+        const slugHyphen = stem.toLowerCase().trim().replace(/[\s_]+/g, "-");
+        const slugUnderscore = stem.toLowerCase().trim().replace(/[\s-]+/g, "_");
+        const cleanStem = stem.toLowerCase().trim().replace(/[^a-z0-9]/g, "");
         
-        fs.copyFileSync(srcPath, path.join(publicPhotosDir, slugFileName));
-        fs.copyFileSync(srcPath, path.join(publicUpperPhotosDir, slugFileName));
-
-        if (ext.toLowerCase() === ".jpg" || ext.toLowerCase() === ".jpeg") {
-          fs.copyFileSync(srcPath, path.join(publicPhotosDir, `${slugStem}.png`));
-          fs.copyFileSync(srcPath, path.join(publicUpperPhotosDir, `${slugStem}.png`));
-        } else if (ext.toLowerCase() === ".png") {
-          fs.copyFileSync(srcPath, path.join(publicPhotosDir, `${slugStem}.jpg`));
-          fs.copyFileSync(srcPath, path.join(publicUpperPhotosDir, `${slugStem}.jpg`));
-          fs.copyFileSync(srcPath, path.join(publicPhotosDir, `${slugStem}.jpeg`));
-          fs.copyFileSync(srcPath, path.join(publicUpperPhotosDir, `${slugStem}.jpeg`));
+        const exts = [".jpg", ".jpeg", ".png", ".webp"];
+        for (const targetExt of exts) {
+          try {
+            fs.copyFileSync(srcPath, path.join(publicPhotosDir, `${slugHyphen}${targetExt}`));
+            fs.copyFileSync(srcPath, path.join(publicUpperPhotosDir, `${slugHyphen}${targetExt}`));
+            fs.copyFileSync(srcPath, path.join(publicPhotosDir, `${slugUnderscore}${targetExt}`));
+            fs.copyFileSync(srcPath, path.join(publicUpperPhotosDir, `${slugUnderscore}${targetExt}`));
+            fs.copyFileSync(srcPath, path.join(publicPhotosDir, `${cleanStem}${targetExt}`));
+            fs.copyFileSync(srcPath, path.join(publicUpperPhotosDir, `${cleanStem}${targetExt}`));
+          } catch {
+            // ignore individual copy errors
+          }
         }
       }
     }
