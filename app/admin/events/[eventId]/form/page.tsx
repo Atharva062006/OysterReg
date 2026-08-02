@@ -9,7 +9,6 @@ import {
   Event,
   FormFieldConfig,
   DEFAULT_RECRUITMENT_FORM_SCHEMA,
-  HACKATHON_FORM_SCHEMA_PRESET,
   WORKSHOP_FORM_SCHEMA_PRESET,
 } from "@/lib/firebase";
 import EventAdminNav from "@/components/EventAdminNav";
@@ -162,7 +161,7 @@ export default function FormBuilderPage({ params }: FormBuilderPageProps) {
     setFormSchema(next);
   }
 
-  function handleHotswapPreset(presetName: "recruitment" | "hackathon" | "workshop") {
+  function handleHotswapPreset(presetName: "recruitment" | "workshop") {
     if (
       !confirm(
         `Are you sure you want to replace current form fields with the "${presetName.toUpperCase()}" template preset?`
@@ -173,8 +172,6 @@ export default function FormBuilderPage({ params }: FormBuilderPageProps) {
 
     if (presetName === "recruitment") {
       setFormSchema(DEFAULT_RECRUITMENT_FORM_SCHEMA);
-    } else if (presetName === "hackathon") {
-      setFormSchema(HACKATHON_FORM_SCHEMA_PRESET);
     } else if (presetName === "workshop") {
       setFormSchema(WORKSHOP_FORM_SCHEMA_PRESET);
     }
@@ -233,7 +230,7 @@ export default function FormBuilderPage({ params }: FormBuilderPageProps) {
       </header>
 
       {/* Nav */}
-      <EventAdminNav eventId={eventId} eventName={event.name} />
+      <EventAdminNav eventId={eventId} eventName={event.name} eventType={event.type} />
 
       <main className={styles.main}>
         {error && <div className={styles.errorBanner}>{error}</div>}
@@ -290,12 +287,6 @@ export default function FormBuilderPage({ params }: FormBuilderPageProps) {
                   className="btn btn-outline"
                 >
                   Apply Standard Recruitment Preset
-                </button>
-                <button
-                  onClick={() => handleHotswapPreset("hackathon")}
-                  className="btn btn-outline"
-                >
-                  Apply Hackathon Form Preset
                 </button>
                 <button
                   onClick={() => handleHotswapPreset("workshop")}

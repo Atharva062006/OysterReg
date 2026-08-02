@@ -7,27 +7,37 @@ import styles from "./AdminNav.module.css";
 interface EventAdminNavProps {
   eventId: string;
   eventName?: string;
+  eventType?: "recruitment" | "workshop";
 }
 
-export default function EventAdminNav({ eventId, eventName }: EventAdminNavProps) {
+export default function EventAdminNav({ eventId, eventName, eventType = "recruitment" }: EventAdminNavProps) {
   const pathname = usePathname();
 
   // Group 1: Day-to-Day Operations & Candidate Pipeline (Dedicated pages)
-  const operationItems = [
-    { href: `/admin/events/${eventId}`, label: "Overview", isExact: true },
-    { href: `/admin/events/${eventId}/aptitude`, label: "Aptitude Review" },
-    { href: `/admin/events/${eventId}/interview`, label: "Interview & Panels" },
-    { href: `/admin/events/${eventId}/selected`, label: "Selected Candidates" },
-    { href: `/admin/events/${eventId}/candidates`, label: "All Applicants", isExact: true },
-  ];
+  const operationItems = eventType === "workshop"
+    ? [
+        { href: `/admin/events/${eventId}`, label: "Overview", isExact: true },
+        { href: `/admin/events/${eventId}/candidates`, label: "Registrations & Attendance", isExact: true },
+      ]
+    : [
+        { href: `/admin/events/${eventId}`, label: "Overview", isExact: true },
+        { href: `/admin/events/${eventId}/aptitude`, label: "Aptitude Review" },
+        { href: `/admin/events/${eventId}/interview`, label: "Interview & Panels" },
+        { href: `/admin/events/${eventId}/selected`, label: "Selected Candidates" },
+        { href: `/admin/events/${eventId}/candidates`, label: "All Applicants", isExact: true },
+      ];
 
   // Group 2: Event Building, Schema & Settings
-  const builderItems = [
-    { href: `/admin/events/${eventId}/form`, label: "Form Builder" },
-    { href: `/admin/events/${eventId}/stages`, label: "Stage Pipeline Builder" },
-    { href: `/admin/events/${eventId}/panels`, label: "Interviewer Panels Setup" },
-    { href: `/admin/events/${eventId}/settings`, label: "Event Settings & Controls" },
-  ];
+  const builderItems = eventType === "workshop"
+    ? [
+        { href: `/admin/events/${eventId}/form`, label: "Form Builder" },
+        { href: `/admin/events/${eventId}/settings`, label: "Event Settings & Controls" },
+      ]
+    : [
+        { href: `/admin/events/${eventId}/form`, label: "Form Builder" },
+        { href: `/admin/events/${eventId}/panels`, label: "Interviewer Panels Setup" },
+        { href: `/admin/events/${eventId}/settings`, label: "Event Settings & Controls" },
+      ];
 
   return (
     <div className={styles.navContainer}>

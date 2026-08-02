@@ -256,15 +256,18 @@ export default function CandidatesPage({ params }: CandidatesPageProps) {
             <div>
               <div className={styles.breadcrumb}>{event.name}</div>
               <h1 className={styles.pageTitle}>
-                {stageFilter === "registered"
-                  ? "Aptitude & Initial Review"
-                  : stageFilter === "aptitude_shortlisted"
-                  ? "Interview & Panel Evaluation"
-                  : stageFilter === "selected"
-                  ? "Selected Candidates"
-                  : stageFilter === "all"
+                {stageFilter === "all"
                   ? "All Applicants & Pipeline"
-                  : currentStageConfig?.name || "Candidates"}
+                  : event.type === "recruitment"
+                  ? (stageFilter === "registered"
+                      ? "Aptitude & Initial Review"
+                      : stageFilter === "aptitude_shortlisted"
+                      ? "Interview & Panel Evaluation"
+                      : stageFilter === "selected"
+                      ? "Selected Candidates"
+                      : currentStageConfig?.name || "Candidates")
+                  : (currentStageConfig?.name || "Candidates")
+                }
               </h1>
             </div>
           </div>
@@ -275,7 +278,7 @@ export default function CandidatesPage({ params }: CandidatesPageProps) {
       </header>
 
       {/* Nav */}
-      <EventAdminNav eventId={eventId} eventName={event.name} />
+      <EventAdminNav eventId={eventId} eventName={event.name} eventType={event.type} />
 
       <main className={styles.main}>
         <section className={styles.section}>
@@ -409,15 +412,15 @@ export default function CandidatesPage({ params }: CandidatesPageProps) {
                   <th>Roll / Identifier</th>
                   <th>Attendance</th>
                   <th>Stage Status</th>
-                  <th>Assigned Panel</th>
-                  <th>Interviewer Score & Verdict</th>
+                  {event.type !== "workshop" && <th>Assigned Panel</th>}
+                  {event.type !== "workshop" && <th>Interviewer Score & Verdict</th>}
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className={tableStyles.emptyState}>
+                    <td colSpan={event.type === "workshop" ? 6 : 8} className={tableStyles.emptyState}>
                       No candidate registrations match your filter.
                     </td>
                   </tr>
@@ -484,52 +487,56 @@ export default function CandidatesPage({ params }: CandidatesPageProps) {
                             ))}
                           </select>
                         </td>
-                        <td>
-                          {/* Panel Assignment Dropdown */}
-                          <select
-                            value={reg.panelId || ""}
-                            onChange={(e) => handleAssignPanel(reg.rollNumber, e.target.value)}
-                            disabled={assigningRn === reg.rollNumber}
-                            style={{
-                              padding: "0.25rem 0.5rem",
-                              background: reg.panelId ? "rgba(245, 166, 35, 0.1)" : "var(--surface)",
-                              border: `1px solid ${reg.panelId ? "var(--accent)" : "var(--border)"}`,
-                              borderRadius: "var(--radius-sm)",
-                              color: "var(--text-primary)",
-                              fontSize: "0.8125rem",
-                            }}
-                          >
-                            <option value="">Unassigned Panel</option>
-                            {panels.map((p) => (
-                              <option key={p.id} value={p.id}>
-                                {p.name}
-                              </option>
-                            ))}
-                          </select>
-                        </td>
-                        <td>
-                          {/* Verdict & Notes */}
-                          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                            <VerdictBadge verdict={panelVerdictObj?.verdict} />
-                            {panelVerdictObj?.notes && (
-                              <button
-                                onClick={() =>
-                                  setNotesModal({
-                                    name: reg.name,
-                                    rollNumber: reg.rollNumber,
-                                    panelName: assignedPanelObj?.name || "Panel",
-                                    verdict: panelVerdictObj.verdict,
-                                    notes: panelVerdictObj.notes,
-                                  })
-                                }
-                                className="btn btn-sm btn-outline"
-                                style={{ fontSize: "0.7rem", padding: "0.15rem 0.4rem" }}
-                              >
-                                Notes
-                              </button>
-                            )}
-                          </div>
-                        </td>
+                        {event.type !== "workshop" && (
+                          <td>
+                            {/* Panel Assignment Dropdown */}
+                            <select
+                              value={reg.panelId || ""}
+                              onChange={(e) => handleAssignPanel(reg.rollNumber, e.target.value)}
+                              disabled={assigningRn === reg.rollNumber}
+                              style={{
+                                padding: "0.25rem 0.5rem",
+                                background: reg.panelId ? "rgba(245, 166, 35, 0.1)" : "var(--surface)",
+                                border: `1px solid ${reg.panelId ? "var(--accent)" : "var(--border)"}`,
+                                borderRadius: "var(--radius-sm)",
+                                color: "var(--text-primary)",
+                                fontSize: "0.8125rem",
+                              }}
+                            >
+                              <option value="">Unassigned Panel</option>
+                              {panels.map((p) => (
+                                <option key={p.id} value={p.id}>
+                                  {p.name}
+                                </option>
+                              ))}
+                            </select>
+                          </td>
+                        )}
+                        {event.type !== "workshop" && (
+                          <td>
+                            {/* Verdict & Notes */}
+                            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                              <VerdictBadge verdict={panelVerdictObj?.verdict} />
+                              {panelVerdictObj?.notes && (
+                                <button
+                                  onClick={() =>
+                                    setNotesModal({
+                                      name: reg.name,
+                                      rollNumber: reg.rollNumber,
+                                      panelName: assignedPanelObj?.name || "Panel",
+                                      verdict: panelVerdictObj?.verdict,
+                                      notes: panelVerdictObj.notes,
+                                    })
+                                  }
+                                  className="btn btn-sm btn-outline"
+                                  style={{ fontSize: "0.7rem", padding: "0.15rem 0.4rem" }}
+                                >
+                                  📝 Notes
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        )}
                         <td>
                           <button
                             onClick={() => setViewCandidate(reg)}

@@ -147,7 +147,7 @@ export default function EventOverviewPage({ params }: EventOverviewProps) {
       </header>
 
       {/* Workspace Nav */}
-      <EventAdminNav eventId={eventId} eventName={event.name} />
+      <EventAdminNav eventId={eventId} eventName={event.name} eventType={event.type} />
 
       <main className={styles.main}>
         {/* Status Header Bar */}
@@ -184,13 +184,10 @@ export default function EventOverviewPage({ params }: EventOverviewProps) {
           </div>
         </section>
 
-        {/* Dynamic Pipeline Stages Overview */}
+        {/* Pipeline Stages Overview */}
         <section className={styles.section}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <h2 className={styles.sectionTitle}>Pipeline Stages</h2>
-            <Link href={`/admin/events/${eventId}/stages`} className="btn btn-sm btn-outline" style={{ fontSize: "0.75rem" }}>
-              Customize Stages
-            </Link>
           </div>
 
           <div className={styles.pipeline} style={{ marginTop: "1rem" }}>

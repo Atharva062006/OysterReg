@@ -154,7 +154,7 @@ export default function SelectedCandidatesPage({ params }: PageProps) {
         </div>
       </header>
 
-      <EventAdminNav eventId={eventId} eventName={event.name} />
+      <EventAdminNav eventId={eventId} eventName={event.name} eventType={event.type} />
 
       <main className={styles.main}>
         {error && <div className={styles.errorBanner}>{error}</div>}

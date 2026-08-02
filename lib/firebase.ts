@@ -123,6 +123,7 @@ export interface Event {
   formSchema: FormFieldConfig[];
   createdAt: Timestamp;
   updatedAt?: Timestamp;
+  type: "recruitment" | "workshop";
 }
 
 // ── Standard Presets & Initial Defaults ─────────────────────────────────────
@@ -133,6 +134,13 @@ export const DEFAULT_RECRUITMENT_STAGES: EventStage[] = [
   { id: "interview_shortlisted", name: "Interview Shortlisted", color: "amber", order: 3 },
   { id: "selected", name: "Selected", color: "green", order: 4, isTerminal: true },
   { id: "rejected", name: "Rejected", color: "rose", order: 5, isTerminal: true },
+];
+
+export const DEFAULT_WORKSHOP_STAGES: EventStage[] = [
+  { id: "registered", name: "Registered", color: "default", order: 1 },
+  { id: "confirmed", name: "RSVP Confirmed", color: "green", order: 2, isTerminal: true },
+  { id: "attended", name: "Attended", color: "blue", order: 3, isTerminal: true },
+  { id: "cancelled", name: "Cancelled", color: "rose", order: 4, isTerminal: true },
 ];
 
 export const DEFAULT_RECRUITMENT_FORM_SCHEMA: FormFieldConfig[] = [
@@ -214,41 +222,6 @@ export const DEFAULT_RECRUITMENT_FORM_SCHEMA: FormFieldConfig[] = [
   },
 ];
 
-export const HACKATHON_FORM_SCHEMA_PRESET: FormFieldConfig[] = [
-  { id: "name", label: "Team Leader Name", type: "text", placeholder: "Leader's full name", required: true, gridSpan: 1 },
-  { id: "rollNumber", label: "Roll Number", type: "text", placeholder: "e.g. 2403036", required: true, gridSpan: 1 },
-  { id: "email", label: "Email Address", type: "email", placeholder: "leader@email.com", required: true, gridSpan: 1 },
-  { id: "phone", label: "Phone Number", type: "tel", placeholder: "10-digit phone number", required: true, gridSpan: 1 },
-  { id: "teamName", label: "Team Name", type: "text", placeholder: "Cool Team Name", required: true, gridSpan: 2 },
-  {
-    id: "trackSelect",
-    label: "Hackathon Track",
-    type: "select",
-    required: true,
-    gridSpan: 1,
-    options: [
-      { value: "web3", label: "Web3 & Blockchain" },
-      { value: "ai_ml", label: "AI & Machine Learning" },
-      { value: "open_innovation", label: "Open Innovation" },
-    ],
-  },
-  {
-    id: "teamSize",
-    label: "Team Size",
-    type: "select",
-    required: true,
-    gridSpan: 1,
-    options: [
-      { value: "1", label: "Solo (1)" },
-      { value: "2", label: "Duo (2)" },
-      { value: "3", label: "Trio (3)" },
-      { value: "4", label: "Squad (4)" },
-    ],
-  },
-  { id: "githubUrl", label: "GitHub Repository / Profile Link", type: "url", placeholder: "https://github.com/...", required: true, gridSpan: 2 },
-  { id: "ideaPitch", label: "Brief Project Pitch", type: "textarea", placeholder: "Describe what you plan to build...", required: true, gridSpan: 2 },
-];
-
 export const WORKSHOP_FORM_SCHEMA_PRESET: FormFieldConfig[] = [
   { id: "name", label: "Full Name", type: "text", placeholder: "Your full name", required: true, gridSpan: 1 },
   { id: "rollNumber", label: "Roll Number", type: "text", placeholder: "e.g. 2403036", required: true, gridSpan: 1 },
@@ -279,6 +252,7 @@ export const DEFAULT_RECRUITMENT_EVENT: Event = {
   formSchema: DEFAULT_RECRUITMENT_FORM_SCHEMA,
   createdAt: Timestamp.now(),
   updatedAt: Timestamp.now(),
+  type: "recruitment",
 };
 
 // ── Multi-Event Helpers ───────────────────────────────────────────────────
@@ -369,7 +343,7 @@ export async function setActiveEvent(eventId: string): Promise<void> {
 export async function createEvent(
   name: string,
   description: string,
-  preset: "recruitment" | "hackathon" | "workshop" = "recruitment"
+  preset: "recruitment" | "workshop" = "recruitment"
 ): Promise<string> {
   const slug = name
     .toLowerCase()
@@ -383,22 +357,8 @@ export async function createEvent(
   let stages = DEFAULT_RECRUITMENT_STAGES;
   let formSchema = DEFAULT_RECRUITMENT_FORM_SCHEMA;
 
-  if (preset === "hackathon") {
-    stages = [
-      { id: "registered", name: "Registered", color: "default", order: 1 },
-      { id: "shortlisted", name: "Idea Shortlisted", color: "blue", order: 2 },
-      { id: "checkin", name: "Checked In", color: "amber", order: 3 },
-      { id: "winner", name: "Winner / Top Team", color: "green", order: 4, isTerminal: true },
-      { id: "rejected", name: "Rejected", color: "rose", order: 5, isTerminal: true },
-    ];
-    formSchema = HACKATHON_FORM_SCHEMA_PRESET;
-  } else if (preset === "workshop") {
-    stages = [
-      { id: "registered", name: "Registered", color: "default", order: 1 },
-      { id: "confirmed", name: "RSVP Confirmed", color: "green", order: 2, isTerminal: true },
-      { id: "attended", name: "Attended", color: "blue", order: 3, isTerminal: true },
-      { id: "cancelled", name: "Cancelled", color: "rose", order: 4, isTerminal: true },
-    ];
+  if (preset === "workshop") {
+    stages = DEFAULT_WORKSHOP_STAGES;
     formSchema = WORKSHOP_FORM_SCHEMA_PRESET;
   }
 
@@ -406,6 +366,7 @@ export async function createEvent(
     id: eventId,
     name,
     description,
+    type: preset,
     registrationOpen: true,
     isActive: false,
     stages,
@@ -444,17 +405,7 @@ export async function toggleEventRegistration(
   });
 }
 
-/** Save updated pipeline stages for an event. */
-export async function saveEventStages(
-  eventId: string,
-  stages: EventStage[]
-): Promise<void> {
-  const ref = doc(db, "events", eventId);
-  await updateDoc(ref, {
-    stages,
-    updatedAt: Timestamp.now(),
-  });
-}
+
 
 /** Save updated form schema fields for an event. */
 export async function saveEventFormSchema(
@@ -462,8 +413,10 @@ export async function saveEventFormSchema(
   formSchema: FormFieldConfig[]
 ): Promise<void> {
   const ref = doc(db, "events", eventId);
+  // Strip undefined values which Firestore does not support
+  const cleanFormSchema = JSON.parse(JSON.stringify(formSchema));
   await updateDoc(ref, {
-    formSchema,
+    formSchema: cleanFormSchema,
     updatedAt: Timestamp.now(),
   });
 }

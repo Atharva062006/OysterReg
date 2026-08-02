@@ -27,7 +27,7 @@ export default function AdminHubPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [preset, setPreset] = useState<"recruitment" | "hackathon" | "workshop">("recruitment");
+  const [preset, setPreset] = useState<"recruitment" | "workshop">("recruitment");
   const [creating, setCreating] = useState(false);
   const [formError, setFormError] = useState("");
 
@@ -235,6 +235,18 @@ export default function AdminHubPage() {
                       ) : (
                         <span className={styles.badgeClosed}>Closed</span>
                       )}
+                      <span style={{
+                        background: (ev.type || "recruitment") === "workshop" ? "rgba(59, 130, 246, 0.15)" : "rgba(168, 85, 247, 0.15)",
+                        color: (ev.type || "recruitment") === "workshop" ? "#3b82f6" : "#a855f7",
+                        border: (ev.type || "recruitment") === "workshop" ? "1px solid rgba(59, 130, 246, 0.3)" : "1px solid rgba(168, 85, 247, 0.3)",
+                        fontSize: "0.6875rem",
+                        fontWeight: 600,
+                        padding: "0.2rem 0.5rem",
+                        borderRadius: "999px",
+                        textTransform: "uppercase"
+                      }}>
+                        {ev.type || "recruitment"}
+                      </span>
                     </div>
                     <h3 className={styles.eventTitle}>{ev.name}</h3>
                     <p className={styles.eventDesc}>{ev.description || "No description provided."}</p>
@@ -373,7 +385,6 @@ export default function AdminHubPage() {
                   }}
                 >
                   <option value="recruitment">Standard Recruitment (Registered → Aptitude → Interview → Selected)</option>
-                  <option value="hackathon">Hackathon / Project Contest (Registered → Idea Shortlist → Check-in → Winner)</option>
                   <option value="workshop">Workshop / Event RSVP (Registered → RSVP Confirmed → Attended)</option>
                 </select>
               </div>
