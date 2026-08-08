@@ -47,8 +47,8 @@ export default function FormField({
       return;
     }
     
-    if (file.size > 5 * 1024 * 1024) { // 5MB
-      setUploadError("File size must be less than 5MB.");
+    if (file.size > 2 * 1024 * 1024) { // 2MB
+      setUploadError("File size must be less than 2MB.");
       return;
     }
 
@@ -161,13 +161,32 @@ export default function FormField({
 
       {type === "file" && (
         <div className={styles.fileUploadContainer}>
+          <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+            <label 
+              htmlFor={inputId}
+              className="btn btn-outline"
+              style={{ cursor: uploading ? "not-allowed" : "pointer", opacity: uploading ? 0.7 : 1, display: "inline-flex", alignItems: "center", gap: "0.5rem" }}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="17 8 12 3 7 8"></polyline>
+                <line x1="12" y1="3" x2="12" y2="15"></line>
+              </svg>
+              {uploading ? "Uploading..." : "Select PDF File"}
+            </label>
+            {value && !uploading && (
+              <span style={{ fontSize: "0.875rem", color: "#22c55e", fontWeight: 600, display: "flex", alignItems: "center", gap: "0.25rem" }}>
+                ✓ Uploaded
+              </span>
+            )}
+          </div>
           <input
             id={inputId}
             type="file"
             accept=".pdf"
             onChange={handleFileUpload}
             disabled={uploading}
-            className={styles.fileInput}
+            style={{ display: "none" }}
             aria-describedby={error || uploadError ? `${inputId}-error` : undefined}
           />
           {uploading && (
