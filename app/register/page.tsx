@@ -84,7 +84,11 @@ export default function RegistrationPage() {
 
     try {
       await submitEventRegistration(event.id, formData);
-      router.push("/success");
+      if (event.whatsappGroupLink) {
+        router.push(`/success?whatsapp=${encodeURIComponent(event.whatsappGroupLink)}`);
+      } else {
+        router.push("/success");
+      }
     } catch (err: any) {
       setSubmitError(err.message || "Something went wrong. Please try again.");
     } finally {

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import styles from "./FormField.module.css";
 
 interface Option {
@@ -10,7 +11,7 @@ interface Option {
 interface FormFieldProps {
   id: string;
   label: string;
-  type?: "text" | "number" | "email" | "tel" | "url" | "textarea" | "select" | "radio" | "checkbox";
+  type?: "text" | "number" | "email" | "tel" | "url" | "textarea" | "select" | "radio" | "checkbox" | "file";
   options?: Option[];
   required?: boolean;
   placeholder?: string;
@@ -33,6 +34,73 @@ export default function FormField({
   hint,
 }: FormFieldProps) {
   const inputId = `field-${id}`;
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadError, setUploadError] = useState("");
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.type !== "application/pdf") {
+      setUploadError("Please upload a valid PDF file.");
+      return;
+    }
+    
+    if (file.size > 5 * 1024 * 1024) { // 5MB
+      setUploadError("File size must be less than 5MB.");
+      return;
+    }
+
+    setUploading(true);
+    setUploadError("");
+    
+    const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+    const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
+
+    if (!cloudName || !uploadPreset) {
+      setUploadError("Cloudinary configuration missing. Check .env.local");
+      setUploading(false);
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", uploadPreset);
+
+    try {
+      const xhr = new XMLHttpRequest();
+      xhr.open("POST", `https://api.cloudinary.com/v1_1/${cloudName}/upload`);
+
+      xhr.upload.onprogress = (event) => {
+        if (event.lengthComputable) {
+          const percentComplete = Math.round((event.loaded / event.total) * 100);
+          setUploadProgress(percentComplete);
+        }
+      };
+
+      xhr.onload = () => {
+        if (xhr.status === 200) {
+          const response = JSON.parse(xhr.responseText);
+          onChange(response.secure_url);
+        } else {
+          setUploadError("Upload failed. Please try again.");
+        }
+        setUploading(false);
+      };
+
+      xhr.onerror = () => {
+        setUploadError("Network error occurred during upload.");
+        setUploading(false);
+      };
+
+      xhr.send(formData);
+    } catch (err) {
+      console.error(err);
+      setUploadError("An error occurred during upload.");
+      setUploading(false);
+    }
+  };
 
   return (
     <div className={styles.field}>
@@ -91,7 +159,32 @@ export default function FormField({
         </div>
       )}
 
-      {type !== "textarea" && type !== "select" && type !== "radio" && (
+      {type === "file" && (
+        <div className={styles.fileUploadContainer}>
+          <input
+            id={inputId}
+            type="file"
+            accept=".pdf"
+            onChange={handleFileUpload}
+            disabled={uploading}
+            className={styles.fileInput}
+            aria-describedby={error || uploadError ? `${inputId}-error` : undefined}
+          />
+          {uploading && (
+            <div className={styles.progressContainer}>
+              <div className={styles.progressBar} style={{ width: `${uploadProgress}%` }} />
+              <span className={styles.progressText}>Uploading... {uploadProgress}%</span>
+            </div>
+          )}
+          {value && !uploading && (
+            <div className={styles.fileSuccess}>
+              <a href={value} target="_blank" rel="noopener noreferrer">View Uploaded PDF</a>
+            </div>
+          )}
+        </div>
+      )}
+
+      {type !== "textarea" && type !== "select" && type !== "radio" && type !== "file" && (
         <input
           id={inputId}
           type={type}
@@ -103,9 +196,9 @@ export default function FormField({
         />
       )}
 
-      {error && (
+      {(error || uploadError) && (
         <p id={`${inputId}-error`} className={styles.error} role="alert">
-          {error}
+          {error || uploadError}
         </p>
       )}
     </div>

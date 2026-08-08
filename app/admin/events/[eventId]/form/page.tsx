@@ -28,6 +28,7 @@ const FIELD_TYPES: { value: FormFieldConfig["type"]; label: string }[] = [
   { value: "textarea", label: "Multi-line Textarea" },
   { value: "select", label: "Dropdown Select" },
   { value: "radio", label: "Radio Options" },
+  { value: "file", label: "File Upload (PDF)" },
 ];
 
 export default function FormBuilderPage({ params }: FormBuilderPageProps) {
@@ -50,6 +51,7 @@ export default function FormBuilderPage({ params }: FormBuilderPageProps) {
   const [newType, setNewType] = useState<FormFieldConfig["type"]>("text");
   const [newPlaceholder, setNewPlaceholder] = useState("");
   const [newRequired, setNewRequired] = useState(true);
+  const [newPanelVisible, setNewPanelVisible] = useState(false);
   const [newOptionsText, setNewOptionsText] = useState("");
   const [newHint, setNewHint] = useState("");
   const [newSpan, setNewSpan] = useState<1 | 2>(1);
@@ -129,6 +131,7 @@ export default function FormBuilderPage({ params }: FormBuilderPageProps) {
       options,
       hint: newHint.trim() || undefined,
       gridSpan: newSpan,
+      panelVisible: newPanelVisible,
     };
 
     setFormSchema((prev) => [...prev, field]);
@@ -136,6 +139,15 @@ export default function FormBuilderPage({ params }: FormBuilderPageProps) {
     setNewPlaceholder("");
     setNewOptionsText("");
     setNewHint("");
+    setNewPanelVisible(false);
+  }
+
+  function handleTogglePanelVisible(id: string) {
+    setFormSchema((prev) =>
+      prev.map((field) =>
+        field.id === id ? { ...field, panelVisible: !field.panelVisible } : field
+      )
+    );
   }
 
   function handleRemoveField(id: string) {
@@ -321,6 +333,7 @@ export default function FormBuilderPage({ params }: FormBuilderPageProps) {
                       <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
                         <span style={{ fontWeight: 700, color: "var(--text-primary)" }}>{field.label}</span>
                         {field.required && <span style={{ color: "var(--danger)", fontSize: "0.75rem" }}>*Required</span>}
+                        {field.panelVisible && <span style={{ color: "var(--accent)", fontSize: "0.75rem", border: "1px solid var(--accent)", padding: "0.1rem 0.3rem", borderRadius: "var(--radius-sm)" }}>👁 Panel Visible</span>}
                         <span
                           style={{
                             fontSize: "0.6875rem",
@@ -356,6 +369,14 @@ export default function FormBuilderPage({ params }: FormBuilderPageProps) {
                         title="Move Down"
                       >
                         ↓
+                      </button>
+                      <button
+                        onClick={() => handleTogglePanelVisible(field.id)}
+                        className="btn btn-sm btn-outline"
+                        style={{ color: field.panelVisible ? "var(--text-muted)" : "var(--accent)", borderColor: field.panelVisible ? "var(--border)" : "rgba(59, 130, 246, 0.3)" }}
+                        title={field.panelVisible ? "Hide from Panel" : "Show in Panel"}
+                      >
+                        {field.panelVisible ? "👁 Hide" : "👁 Show"}
                       </button>
                       <button
                         onClick={() => handleRemoveField(field.id)}
@@ -511,6 +532,15 @@ export default function FormBuilderPage({ params }: FormBuilderPageProps) {
                       onChange={(e) => setNewRequired(e.target.checked)}
                     />
                     Field is Required
+                  </label>
+                  
+                  <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.875rem", color: "var(--text-primary)", cursor: "pointer" }}>
+                    <input
+                      type="checkbox"
+                      checked={newPanelVisible}
+                      onChange={(e) => setNewPanelVisible(e.target.checked)}
+                    />
+                    Show in Panel View
                   </label>
                 </div>
 

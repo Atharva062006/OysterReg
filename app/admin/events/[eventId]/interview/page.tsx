@@ -194,6 +194,44 @@ export default function InterviewWorkspacePage({ params }: PageProps) {
     }
   }
 
+  function exportCSV() {
+    const headers = [
+      "Name", "Roll Number", "Email", "Phone", "Department",
+      "Year", "Gender", "Coded Before", "Status", "Panel Assigned",
+      "Overall Verdict", "Avg Score", "Present"
+    ];
+    
+    const rows = interviewCandidates.map((r) => {
+      const panelObj = r.panelId ? panels.find(p => p.id === r.panelId) : undefined;
+      const verdictObj = r.panelId ? r.interviews?.[r.panelId] : undefined;
+
+      return [
+        r.name,
+        r.rollNumber,
+        r.email,
+        r.phone,
+        r.department,
+        r.year,
+        r.gender,
+        r.hasCodedBefore ? "Yes" : "No",
+        r.status || "registered",
+        panelObj?.name || "Unassigned",
+        verdictObj?.verdict || "pending",
+        verdictObj?.overallScore || "N/A",
+        r.present ? "Yes" : "No"
+      ];
+    });
+
+    const csv = [headers, ...rows].map((row) => row.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `interview_${event?.name || "export"}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   // Filter candidates relevant to Interview round
   const interviewCandidates = registrations.filter((r) => {
     const s = r.status || "registered";
@@ -319,6 +357,14 @@ export default function InterviewWorkspacePage({ params }: PageProps) {
                 Individual Members View
               </button>
             </div>
+            
+            <button 
+              onClick={exportCSV} 
+              className="btn btn-outline"
+              style={{ fontSize: "0.8125rem", whiteSpace: "nowrap", marginLeft: "auto" }}
+            >
+              Export to CSV
+            </button>
 
             {viewMode === "individual" && allMemberNames.length > 0 && (
               <select

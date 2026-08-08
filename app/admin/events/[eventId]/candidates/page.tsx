@@ -212,6 +212,41 @@ export default function CandidatesPage({ params }: CandidatesPageProps) {
     }
   }
 
+  function exportCSV() {
+    const headers = [
+      "Name", "Roll Number", "Email", "Phone", "Department",
+      "Year", "Gender", "Coded Before", "Stage Status", "Present", "Panel Assigned", "Panel Verdict", "Overall Score"
+    ];
+    const rows = filtered.map((r) => {
+      const panelObj = r.panelId ? panels.find(p => p.id === r.panelId) : undefined;
+      const verdictObj = r.panelId ? r.interviews?.[r.panelId] : undefined;
+      
+      return [
+        r.name,
+        r.rollNumber,
+        r.email,
+        r.phone,
+        r.department,
+        r.year,
+        r.gender,
+        r.hasCodedBefore ? "Yes" : "No",
+        r.status || "registered",
+        r.present ? "Yes" : "No",
+        panelObj?.name || "Unassigned",
+        verdictObj?.verdict || "pending",
+        verdictObj?.overallScore || "N/A"
+      ];
+    });
+    const csv = [headers, ...rows].map((row) => row.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `candidates_${event?.name || "export"}_${stageFilter}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   // Filtered registrations
   const filtered = registrations.filter((r) => {
     const statusMatch = stageFilter === "all" || (r.status || "registered") === stageFilter;
@@ -308,6 +343,14 @@ export default function CandidatesPage({ params }: CandidatesPageProps) {
                 );
               })}
             </select>
+            
+            <button 
+              onClick={exportCSV} 
+              className="btn btn-outline"
+              style={{ fontSize: "0.8125rem", whiteSpace: "nowrap" }}
+            >
+              Export to CSV
+            </button>
           </div>
 
           {/* Bulk actions bar */}
@@ -622,6 +665,27 @@ export default function CandidatesPage({ params }: CandidatesPageProps) {
                   ? viewCandidate.formData[field.id]
                   : (viewCandidate as any)[field.id];
 
+                if (field.type === "file" && typeof val === "string" && val.includes("http")) {
+                  return (
+                    <div
+                      key={field.id}
+                      style={{
+                        background: "var(--bg)",
+                        padding: "0.75rem 1rem",
+                        borderRadius: "var(--radius-md)",
+                        border: "1px solid var(--border)",
+                      }}
+                    >
+                      <div style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase" }}>
+                        {field.label}
+                      </div>
+                      <a href={val} target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-outline" style={{ marginTop: "0.5rem", display: "inline-block" }}>
+                        View PDF Document
+                      </a>
+                    </div>
+                  );
+                }
+
                 return (
                   <div
                     key={field.id}
@@ -641,9 +705,28 @@ export default function CandidatesPage({ params }: CandidatesPageProps) {
                   </div>
                 );
               })}
+              
+              {/* Fallback for resumeUrl if it exists but is not mapped in schema */}
+              {viewCandidate.resumeUrl && !event.formSchema.some(f => f.type === "file") && (
+                <div
+                  style={{
+                    background: "var(--bg)",
+                    padding: "0.75rem 1rem",
+                    borderRadius: "var(--radius-md)",
+                    border: "1px solid var(--border)",
+                  }}
+                >
+                  <div style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase" }}>
+                    Resume
+                  </div>
+                  <a href={viewCandidate.resumeUrl} target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-outline" style={{ marginTop: "0.5rem", display: "inline-block" }}>
+                    View Resume PDF
+                  </a>
+                </div>
+              )}
             </div>
 
-            <div style={{ display: "flex", justifyContent: "flex-end" }}>
+            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "1rem" }}>
               <button onClick={() => setViewCandidate(null)} className="btn btn-primary">
                 Close
               </button>

@@ -6,8 +6,10 @@ import Image from "next/image";
 import {
   getCandidatesForPanel,
   saveMemberEvaluationInEvent,
+  getEventById,
   Registration,
   EvaluationScores,
+  Event,
 } from "@/lib/firebase";
 import styles from "./panel.module.css";
 
@@ -42,6 +44,7 @@ export default function PanelEvaluationPage() {
   const [error, setError] = useState("");
   const [evaluations, setEvaluations] = useState<Record<string, LocalMemberEval>>({});
   const [expandedRn, setExpandedRn] = useState<string | null>(null);
+  const [event, setEvent] = useState<Event | null>(null);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -83,7 +86,13 @@ export default function PanelEvaluationPage() {
         setError("Failed to load assigned candidates.");
       })
       .finally(() => setLoading(false));
-  }, []);
+      
+    // Load event for dynamic panel fields
+    const sessionEventId = session?.eventId || "recruitment-2026";
+    getEventById(sessionEventId).then((ev) => {
+      setEvent(ev);
+    }).catch(console.error);
+  }, [session]);
 
   useEffect(() => {
     if (session) loadData(session.id, session.memberName || "Interviewer");
@@ -283,6 +292,53 @@ export default function PanelEvaluationPage() {
                   {/* Expanded Evaluation Body */}
                   {isExpanded && (
                     <div className={styles.cardBody} style={{ padding: "1.25rem", borderTop: "1px solid var(--border)" }}>
+                      {/* Dynamic Panel Visible Fields */}
+                      {event && (
+                        <div style={{ marginBottom: "1.5rem", padding: "1rem", background: "var(--bg)", borderRadius: "var(--radius-md)", border: "1px solid var(--border)" }}>
+                          <h4 style={{ fontSize: "0.8125rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "0.75rem", borderBottom: "1px solid var(--border)", paddingBottom: "0.5rem" }}>
+                            Candidate Information
+                          </h4>
+                          <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                            {event.formSchema.filter(f => f.panelVisible).map(field => {
+                              const val = r.formData ? r.formData[field.id] : (r as any)[field.id];
+                              if (val === undefined || val === null || val === "") return null;
+                              
+                              if (field.type === "file" && typeof val === "string" && val.includes("http")) {
+                                return (
+                                  <div key={field.id}>
+                                    <span style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", display: "block" }}>{field.label}</span>
+                                    <a href={val} target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-outline" style={{ marginTop: "0.25rem", display: "inline-block", fontSize: "0.75rem" }}>
+                                      📄 View PDF Document
+                                    </a>
+                                  </div>
+                                );
+                              }
+                              
+                              return (
+                                <div key={field.id}>
+                                  <span style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", display: "block" }}>{field.label}</span>
+                                  <span style={{ fontSize: "0.9375rem", color: "var(--text-primary)" }}>{String(val)}</span>
+                                </div>
+                              );
+                            })}
+                            
+                            {/* Fallback for resumeUrl if it wasn't added as a visible field but exists */}
+                            {r.resumeUrl && !event.formSchema.some(f => f.panelVisible && f.type === "file") && (
+                                <div>
+                                  <span style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", display: "block" }}>Resume</span>
+                                  <a href={r.resumeUrl} target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-outline" style={{ marginTop: "0.25rem", display: "inline-block", fontSize: "0.75rem" }}>
+                                    📄 View Resume PDF
+                                  </a>
+                                </div>
+                            )}
+                            
+                            {event.formSchema.filter(f => f.panelVisible).length === 0 && !r.resumeUrl && (
+                                <span style={{ fontSize: "0.875rem", color: "var(--text-muted)" }}>No additional fields configured for panel view.</span>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
                       {/* 1. Verdict Selector Buttons */}
                       <div style={{ marginBottom: "1.25rem" }}>
                         <label style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase" }}>

@@ -27,6 +27,7 @@ export default function SettingsPage({ params }: SettingsPageProps) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [closedMessage, setClosedMessage] = useState("");
+  const [whatsappGroupLink, setWhatsappGroupLink] = useState("");
   const [registrationOpen, setRegistrationOpen] = useState(true);
 
   const [loading, setLoading] = useState(true);
@@ -54,6 +55,7 @@ export default function SettingsPage({ params }: SettingsPageProps) {
       setName(ev.name);
       setDescription(ev.description || "");
       setClosedMessage(ev.closedMessage || "Registrations for this event are currently closed.");
+      setWhatsappGroupLink(ev.whatsappGroupLink || "");
       setRegistrationOpen(ev.registrationOpen);
     } catch (err) {
       console.error(err);
@@ -83,6 +85,7 @@ export default function SettingsPage({ params }: SettingsPageProps) {
         name: name.trim(),
         description: description.trim(),
         closedMessage: closedMessage.trim(),
+        whatsappGroupLink: whatsappGroupLink.trim(),
         registrationOpen,
       });
       setSuccess("Event settings updated successfully.");
@@ -222,6 +225,27 @@ export default function SettingsPage({ params }: SettingsPageProps) {
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={3}
+                style={{
+                  width: "100%",
+                  padding: "0.75rem 1rem",
+                  background: "var(--bg)",
+                  border: "1px solid var(--border)",
+                  borderRadius: "var(--radius-md)",
+                  color: "var(--text-primary)",
+                  marginTop: "0.375rem",
+                }}
+              />
+            </div>
+            
+            <div>
+              <label style={{ fontSize: "0.875rem", fontWeight: 600, color: "var(--text-secondary)" }}>
+                WhatsApp Group Link (Optional)
+              </label>
+              <input
+                type="url"
+                value={whatsappGroupLink}
+                onChange={(e) => setWhatsappGroupLink(e.target.value)}
+                placeholder="e.g. https://chat.whatsapp.com/..."
                 style={{
                   width: "100%",
                   padding: "0.75rem 1rem",

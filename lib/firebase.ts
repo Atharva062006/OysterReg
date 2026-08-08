@@ -82,6 +82,7 @@ export interface Registration {
   // Dynamic extra fields
   formData?: Record<string, any>;
   eventId?: string;
+  resumeUrl?: string;
 }
 
 export interface Panel {
@@ -104,12 +105,13 @@ export interface EventStage {
 export interface FormFieldConfig {
   id: string;
   label: string;
-  type: "text" | "number" | "email" | "tel" | "textarea" | "select" | "radio" | "checkbox" | "url";
+  type: "text" | "number" | "email" | "tel" | "textarea" | "select" | "radio" | "checkbox" | "url" | "file";
   placeholder?: string;
   required: boolean;
   options?: { value: string; label: string }[];
   hint?: string;
   gridSpan?: 1 | 2;
+  panelVisible?: boolean;
 }
 
 export interface Event {
@@ -124,6 +126,8 @@ export interface Event {
   createdAt: Timestamp;
   updatedAt?: Timestamp;
   type: "recruitment" | "workshop";
+  whatsappGroupLink?: string;
+  panelVisibleFields?: string[];
 }
 
 // ── Standard Presets & Initial Defaults ─────────────────────────────────────
@@ -475,6 +479,7 @@ export async function submitEventRegistration(
     status: event.stages.length > 0 ? event.stages[0].id : "registered",
     formData,
     eventId,
+    resumeUrl: Object.values(formData).find(val => typeof val === 'string' && val.includes('cloudinary.com')), // Extract the first cloudinary link if present
   };
 
   await setDoc(ref, payload);
