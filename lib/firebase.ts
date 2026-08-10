@@ -354,7 +354,7 @@ export async function createEvent(
     .trim()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
-  
+
   const eventId = `${slug}-${Date.now().toString().slice(-4)}`;
   const ref = doc(db, "events", eventId);
 

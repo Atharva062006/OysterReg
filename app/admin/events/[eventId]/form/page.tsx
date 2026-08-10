@@ -42,6 +42,9 @@ export default function FormBuilderPage({ params }: FormBuilderPageProps) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  // Guard: only allow saving if the schema was successfully loaded from Firestore,
+  // not from a hardcoded fallback (prevents accidental wipe during Firestore outages).
+  const [schemaLoadedFromFirestore, setSchemaLoadedFromFirestore] = useState(false);
 
   // Tab: "builder" or "preview"
   const [activeTab, setActiveTab] = useState<"builder" | "preview">("builder");
@@ -69,6 +72,7 @@ export default function FormBuilderPage({ params }: FormBuilderPageProps) {
   const loadData = useCallback(async () => {
     setLoading(true);
     setError("");
+    setSchemaLoadedFromFirestore(false);
     try {
       const ev = await getEventById(eventId);
       if (!ev) {
@@ -77,9 +81,12 @@ export default function FormBuilderPage({ params }: FormBuilderPageProps) {
       }
       setEvent(ev);
       setFormSchema(ev.formSchema || []);
+      // Only mark as safe-to-save if we got a real Firestore document
+      setSchemaLoadedFromFirestore(true);
     } catch (err) {
       console.error(err);
-      setError("Failed to load form configuration.");
+      setError("Failed to load form configuration. Saving is disabled until the schema is confirmed from Firestore.");
+      // schemaLoadedFromFirestore stays false — save will be blocked
     } finally {
       setLoading(false);
     }
@@ -174,11 +181,12 @@ export default function FormBuilderPage({ params }: FormBuilderPageProps) {
   }
 
   function handleHotswapPreset(presetName: "recruitment" | "workshop") {
-    if (
-      !confirm(
-        `Are you sure you want to replace current form fields with the "${presetName.toUpperCase()}" template preset?`
-      )
-    ) {
+    // Require the admin to explicitly type "REPLACE" to prevent accidental schema wipes.
+    const confirmation = prompt(
+      `⚠️ This will PERMANENTLY REPLACE all ${formSchema.length} current field(s) with the "${presetName.toUpperCase()}" preset.\n\nType REPLACE to confirm:`
+    );
+    if (confirmation?.trim() !== "REPLACE") {
+      alert("Hotswap cancelled — you must type REPLACE exactly to proceed.");
       return;
     }
 
@@ -190,6 +198,12 @@ export default function FormBuilderPage({ params }: FormBuilderPageProps) {
   }
 
   async function handleSave() {
+    // Safety guard: never overwrite Firestore with a schema that wasn't confirmed
+    // loaded from Firestore (e.g. hardcoded fallback used during a Firestore outage).
+    if (!schemaLoadedFromFirestore) {
+      setError("Cannot save — the schema could not be confirmed from Firestore. Reload the page and try again.");
+      return;
+    }
     setSaving(true);
     setSuccess("");
     setError("");
