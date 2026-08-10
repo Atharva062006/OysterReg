@@ -18,16 +18,18 @@ export default function RegistrationPage() {
   const [errors, setErrors] = useState<Record<string, string | undefined>>({});
   const [submitError, setSubmitError] = useState("");
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   const loadActiveEvent = useCallback(async () => {
     setLoading(true);
+    setLoadError("");
     try {
       const active = await getActiveEvent();
       setEvent(active);
     } catch (err) {
       console.error(err);
-      setSubmitError("Failed to load active event registration form.");
+      setLoadError("Unable to load the registration form. Please check your connection and try again.");
     } finally {
       setLoading(false);
     }
@@ -101,6 +103,23 @@ export default function RegistrationPage() {
       <main className={styles.main}>
         <div className={styles.container} style={{ textAlign: "center", padding: "4rem 0" }}>
           <p style={{ color: "var(--text-secondary)" }}>Loading registration form…</p>
+        </div>
+      </main>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <main className={styles.main}>
+        <div className={styles.container} style={{ textAlign: "center", padding: "4rem 0" }}>
+          <div style={{ fontSize: "2.5rem", marginBottom: "1rem" }}>⚠️</div>
+          <h1 className={styles.title}>Connection Issue</h1>
+          <p style={{ color: "var(--text-secondary)", fontSize: "0.9375rem", maxWidth: "460px", margin: "0 auto 1.5rem" }}>
+            {loadError}
+          </p>
+          <button onClick={loadActiveEvent} className="btn btn-primary">
+            Try Again
+          </button>
         </div>
       </main>
     );

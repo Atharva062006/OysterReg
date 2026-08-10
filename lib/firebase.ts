@@ -263,73 +263,48 @@ export const DEFAULT_RECRUITMENT_EVENT: Event = {
 
 /** Seed default "Recruitment 2026" event if events collection is empty or restricted. */
 export async function seedDefaultEventIfEmpty(): Promise<Event> {
-  try {
-    const eventsCollectionRef = collection(db, "events");
-    const snapshot = await getDocs(eventsCollectionRef);
+  const eventsCollectionRef = collection(db, "events");
+  const snapshot = await getDocs(eventsCollectionRef);
 
-    if (!snapshot.empty) {
-      const events = snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as Event));
-      const active = events.find((e) => e.isActive) || events[0];
-      return active;
-    }
-
-    const ref = doc(db, "events", DEFAULT_RECRUITMENT_EVENT.id);
-    await setDoc(ref, DEFAULT_RECRUITMENT_EVENT);
-    return DEFAULT_RECRUITMENT_EVENT;
-  } catch (err) {
-    console.warn("Firestore 'events' collection write/read restricted:", err);
-    return DEFAULT_RECRUITMENT_EVENT;
+  if (!snapshot.empty) {
+    const events = snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as Event));
+    const active = events.find((e) => e.isActive) || events[0];
+    return active;
   }
+
+  const ref = doc(db, "events", DEFAULT_RECRUITMENT_EVENT.id);
+  await setDoc(ref, DEFAULT_RECRUITMENT_EVENT);
+  return DEFAULT_RECRUITMENT_EVENT;
 }
 
 /** Fetch all events from Firestore with fallback. */
 export async function getEvents(): Promise<Event[]> {
-  try {
-    await seedDefaultEventIfEmpty();
-    const q = query(collection(db, "events"), orderBy("createdAt", "desc"));
-    const snapshot = await getDocs(q);
-    if (snapshot.empty) {
-      return [DEFAULT_RECRUITMENT_EVENT];
-    }
-    return snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as Event));
-  } catch (err) {
-    console.warn("Firestore 'events' collection read restricted:", err);
+  await seedDefaultEventIfEmpty();
+  const q = query(collection(db, "events"), orderBy("createdAt", "desc"));
+  const snapshot = await getDocs(q);
+  if (snapshot.empty) {
     return [DEFAULT_RECRUITMENT_EVENT];
   }
+  return snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as Event));
 }
 
 /** Fetch a single event by ID. */
 export async function getEventById(eventId: string): Promise<Event | null> {
-  try {
-    const ref = doc(db, "events", eventId);
-    const snap = await getDoc(ref);
-    if (!snap.exists()) {
-      if (eventId === "recruitment-2026") {
-        return DEFAULT_RECRUITMENT_EVENT;
-      }
-      return null;
-    }
-    return { id: snap.id, ...snap.data() } as Event;
-  } catch (err) {
-    console.warn("Firestore 'events' document read restricted:", err);
-    if (eventId === "recruitment-2026") {
-      return DEFAULT_RECRUITMENT_EVENT;
-    }
+  const ref = doc(db, "events", eventId);
+  const snap = await getDoc(ref);
+  if (!snap.exists()) {
     return null;
   }
+  return { id: snap.id, ...snap.data() } as Event;
 }
 
 /** Get the currently designated Active Event for default site registrations. */
 export async function getActiveEvent(): Promise<Event> {
-  try {
-    const events = await getEvents();
-    const active = events.find((e) => e.isActive);
-    if (active) return active;
-    if (events.length > 0) return events[0];
-    return DEFAULT_RECRUITMENT_EVENT;
-  } catch (err) {
-    return DEFAULT_RECRUITMENT_EVENT;
-  }
+  const events = await getEvents();
+  const active = events.find((e) => e.isActive);
+  if (active) return active;
+  if (events.length > 0) return events[0];
+  throw new Error("No active events found. Please contact the administrator.");
 }
 
 /** Set a specific event as the active registration event for `/register`. */
@@ -463,6 +438,18 @@ export async function submitEventRegistration(
     throw new Error("A registration with this identifier already exists for this event.");
   }
 
+  // Sanitize formData: strip undefined values that Firestore rejects
+  const cleanFormData: Record<string, any> = {};
+  for (const [key, value] of Object.entries(formData)) {
+    if (value !== undefined) {
+      cleanFormData[key] = value;
+    }
+  }
+
+  const cloudinaryUrl = Object.values(formData).find(
+    (val) => typeof val === "string" && val.includes("cloudinary.com")
+  );
+
   const payload: Registration = {
     name: formData.name || "",
     rollNumber: rollNumber || "",
@@ -477,9 +464,9 @@ export async function submitEventRegistration(
     submittedAt: Timestamp.now(),
     present: false,
     status: event.stages.length > 0 ? event.stages[0].id : "registered",
-    formData,
+    formData: cleanFormData,
     eventId,
-    resumeUrl: Object.values(formData).find(val => typeof val === 'string' && val.includes('cloudinary.com')), // Extract the first cloudinary link if present
+    resumeUrl: cloudinaryUrl || "",
   };
 
   await setDoc(ref, payload);
