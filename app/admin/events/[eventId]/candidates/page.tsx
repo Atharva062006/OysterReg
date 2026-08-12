@@ -95,6 +95,7 @@ export default function CandidatesPage({ params }: CandidatesPageProps) {
   const [stageFilter, setStageFilter] = useState(initialStageFilter);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [targetStage, setTargetStage] = useState("");
+  const [resumeFilter, setResumeFilter] = useState<"all" | "missing" | "uploaded">("all");
   const [assigningRn, setAssigningRn] = useState<string | null>(null);
 
   // Detail Modal & Notes Modal
@@ -247,6 +248,21 @@ export default function CandidatesPage({ params }: CandidatesPageProps) {
     URL.revokeObjectURL(url);
   }
 
+  // Helper: check if a candidate has a resume uploaded
+  function hasResume(r: Registration): boolean {
+    // Check resumeUrl field
+    if (r.resumeUrl && r.resumeUrl.trim() !== "") return true;
+    // Check formData for any file-type field with a URL value
+    if (r.formData) {
+      const fileFields = event?.formSchema.filter((f) => f.type === "file") || [];
+      for (const field of fileFields) {
+        const val = r.formData[field.id];
+        if (typeof val === "string" && val.trim() !== "") return true;
+      }
+    }
+    return false;
+  }
+
   // Filtered registrations
   const filtered = registrations.filter((r) => {
     const statusMatch = stageFilter === "all" || (r.status || "registered") === stageFilter;
@@ -257,7 +273,11 @@ export default function CandidatesPage({ params }: CandidatesPageProps) {
       r.rollNumber.toLowerCase().includes(q) ||
       r.email.toLowerCase().includes(q) ||
       (r.department && r.department.toLowerCase().includes(q));
-    return statusMatch && textMatch;
+    const resumeMatch =
+      resumeFilter === "all" ||
+      (resumeFilter === "missing" && !hasResume(r)) ||
+      (resumeFilter === "uploaded" && hasResume(r));
+    return statusMatch && textMatch && resumeMatch;
   });
 
   if (loading) {
@@ -342,6 +362,17 @@ export default function CandidatesPage({ params }: CandidatesPageProps) {
                   </option>
                 );
               })}
+            </select>
+
+            {/* Filter by resume status */}
+            <select
+              value={resumeFilter}
+              onChange={(e) => setResumeFilter(e.target.value as any)}
+              className={tableStyles.filterSelect}
+            >
+              <option value="all">All Resumes</option>
+              <option value="missing">Missing Resume</option>
+              <option value="uploaded">Resume Uploaded</option>
             </select>
             
             <button 

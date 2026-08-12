@@ -261,30 +261,10 @@ export const DEFAULT_RECRUITMENT_EVENT: Event = {
 
 // ── Multi-Event Helpers ───────────────────────────────────────────────────
 
-/** Seed default "Recruitment 2026" event if events collection is empty or restricted. */
-export async function seedDefaultEventIfEmpty(): Promise<Event> {
-  const eventsCollectionRef = collection(db, "events");
-  const snapshot = await getDocs(eventsCollectionRef);
-
-  if (!snapshot.empty) {
-    const events = snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as Event));
-    const active = events.find((e) => e.isActive) || events[0];
-    return active;
-  }
-
-  const ref = doc(db, "events", DEFAULT_RECRUITMENT_EVENT.id);
-  await setDoc(ref, DEFAULT_RECRUITMENT_EVENT);
-  return DEFAULT_RECRUITMENT_EVENT;
-}
-
-/** Fetch all events from Firestore with fallback. */
+/** Fetch all events from Firestore. */
 export async function getEvents(): Promise<Event[]> {
-  await seedDefaultEventIfEmpty();
   const q = query(collection(db, "events"), orderBy("createdAt", "desc"));
   const snapshot = await getDocs(q);
-  if (snapshot.empty) {
-    return [DEFAULT_RECRUITMENT_EVENT];
-  }
   return snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as Event));
 }
 
