@@ -23,6 +23,12 @@ export default function HomePage() {
         <span className={styles.clubLabel}>Oyster Kode Club</span>
       </div>
 
+      {/* Live Badge */}
+      <div className={styles.badge}>
+        <span className={styles.badgeDot} aria-hidden="true" />
+        <span>Registrations Open</span>
+      </div>
+
       {/* Headline */}
       <h1 className={styles.headline}>
         Build.<br />
@@ -31,7 +37,7 @@ export default function HomePage() {
       </h1>
 
       <p className={styles.tagline}>
-        Recruitment 2026 — Applications are now open.
+        DSA Marathon — Registrations are now open.
       </p>
 
       {/* CTA Buttons */}
@@ -41,7 +47,7 @@ export default function HomePage() {
           id="cta-register"
           className={`${styles.btn} ${styles.btnPrimary}`}
         >
-          Register
+          Register Now
         </Link>
         <Link
           href="/why-join-us"
