@@ -108,6 +108,10 @@ export default function RegistrationTable({ initialData }: Props) {
     return <span className={styles.sortActive}>{sortDir === "asc" ? "↑" : "↓"}</span>;
   }
 
+  const hasPaidRegistrations = data.some(
+    (r) => r.paymentStatus === "paid" || r.paymentStatus === "pending" || r.razorpayPaymentId
+  );
+
   return (
     <div className={styles.wrapper}>
       {/* ── Controls ── */}
@@ -168,6 +172,7 @@ export default function RegistrationTable({ initialData }: Props) {
               <th>Gender</th>
               <th>Coded?</th>
               <th>GitHub</th>
+              {hasPaidRegistrations && <th>Payment</th>}
               <th onClick={() => handleSort("submittedAt")} className={styles.sortable}>
                 Submitted <SortIndicator k="submittedAt" />
               </th>
@@ -177,7 +182,7 @@ export default function RegistrationTable({ initialData }: Props) {
           <tbody>
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={9} className={styles.empty}>No registrations found.</td>
+                <td colSpan={hasPaidRegistrations ? 10 : 9} className={styles.empty}>No registrations found.</td>
               </tr>
             ) : (
               filtered.map((r) => (
@@ -208,6 +213,45 @@ export default function RegistrationTable({ initialData }: Props) {
                       <span className={styles.noLink}>—</span>
                     )}
                   </td>
+                  {hasPaidRegistrations && (
+                    <td>
+                      {r.paymentStatus === "paid" ? (
+                        <span
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "0.25rem",
+                            fontSize: "0.75rem",
+                            fontWeight: 700,
+                            padding: "0.2rem 0.5rem",
+                            borderRadius: "999px",
+                            background: "rgba(34, 197, 94, 0.15)",
+                            color: "#22c55e",
+                            border: "1px solid rgba(34, 197, 94, 0.3)",
+                          }}
+                          title={`Payment ID: ${r.razorpayPaymentId || "N/A"}`}
+                        >
+                          ✓ Paid {r.paymentAmount ? `₹${r.paymentAmount}` : ""}
+                        </span>
+                      ) : r.paymentStatus === "pending" ? (
+                        <span
+                          style={{
+                            fontSize: "0.75rem",
+                            fontWeight: 600,
+                            padding: "0.2rem 0.5rem",
+                            borderRadius: "999px",
+                            background: "rgba(245, 166, 35, 0.15)",
+                            color: "#f5a623",
+                            border: "1px solid rgba(245, 166, 35, 0.3)",
+                          }}
+                        >
+                          ⏳ Pending
+                        </span>
+                      ) : (
+                        <span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>Free</span>
+                      )}
+                    </td>
+                  )}
                   <td className={styles.date}>
                     {r.submittedAt.toDate().toLocaleDateString("en-IN", {
                       day: "numeric",

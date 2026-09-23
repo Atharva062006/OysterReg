@@ -83,6 +83,11 @@ export interface Registration {
   formData?: Record<string, any>;
   eventId?: string;
   resumeUrl?: string;
+  // Razorpay payment fields
+  paymentStatus?: "free" | "paid" | "pending" | "failed";
+  paymentAmount?: number; // In paise (or rupees)
+  razorpayOrderId?: string;
+  razorpayPaymentId?: string;
 }
 
 export interface Panel {
@@ -102,13 +107,19 @@ export interface EventStage {
   isTerminal?: boolean;
 }
 
+export interface FormOption {
+  value: string;
+  label: string;
+  price?: number; // Optional per-option fee in INR (e.g. 59, 89)
+}
+
 export interface FormFieldConfig {
   id: string;
   label: string;
   type: "text" | "number" | "email" | "tel" | "textarea" | "select" | "radio" | "checkbox" | "url" | "file";
   placeholder?: string;
   required: boolean;
-  options?: { value: string; label: string }[];
+  options?: FormOption[];
   hint?: string;
   gridSpan?: 1 | 2;
   panelVisible?: boolean;
@@ -128,6 +139,11 @@ export interface Event {
   type: "recruitment" | "workshop";
   whatsappGroupLink?: string;
   panelVisibleFields?: string[];
+  // Razorpay integration
+  razorpayEnabled?: boolean;
+  registrationFee?: number; // Fee in Rupees (e.g. 100 for ₹100), stored as number
+  pricingType?: "fixed" | "dynamic"; // "fixed" uses registrationFee; "dynamic" reads price from pricingFieldId
+  pricingFieldId?: string; // ID of the form field whose selected option determines the fee
 }
 
 // ── Standard Presets & Initial Defaults ─────────────────────────────────────
@@ -394,7 +410,13 @@ export async function deleteEvent(eventId: string): Promise<void> {
 /** Submit candidate registration for a specific event. */
 export async function submitEventRegistration(
   eventId: string,
-  formData: Record<string, any>
+  formData: Record<string, any>,
+  paymentDetails?: {
+    razorpayOrderId?: string;
+    razorpayPaymentId?: string;
+    paymentAmount?: number;
+    paymentStatus?: "free" | "paid" | "pending" | "failed";
+  }
 ): Promise<void> {
   const event = await getEventById(eventId);
   if (!event) throw new Error("Event not found.");
@@ -447,6 +469,10 @@ export async function submitEventRegistration(
     formData: cleanFormData,
     eventId,
     resumeUrl: cloudinaryUrl || "",
+    paymentStatus: paymentDetails?.paymentStatus || (event.razorpayEnabled && (event.registrationFee || 0) > 0 ? "paid" : "free"),
+    ...(paymentDetails?.paymentAmount !== undefined ? { paymentAmount: paymentDetails.paymentAmount } : {}),
+    ...(paymentDetails?.razorpayOrderId ? { razorpayOrderId: paymentDetails.razorpayOrderId } : {}),
+    ...(paymentDetails?.razorpayPaymentId ? { razorpayPaymentId: paymentDetails.razorpayPaymentId } : {}),
   };
 
   await setDoc(ref, payload);

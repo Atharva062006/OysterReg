@@ -56,6 +56,9 @@ export default function FormBuilderPage({ params }: FormBuilderPageProps) {
   const [newRequired, setNewRequired] = useState(true);
   const [newPanelVisible, setNewPanelVisible] = useState(false);
   const [newOptionsText, setNewOptionsText] = useState("");
+  // Per-option price entries for select/radio fields when dynamic pricing is used
+  const [newOptionsWithPrices, setNewOptionsWithPrices] = useState<{ label: string; price: string }[]>([]);
+  const [usePricedOptions, setUsePricedOptions] = useState(false);
   const [newHint, setNewHint] = useState("");
   const [newSpan, setNewSpan] = useState<1 | 2>(1);
 
@@ -116,16 +119,31 @@ export default function FormBuilderPage({ params }: FormBuilderPageProps) {
       return;
     }
 
-    let options: { value: string; label: string }[] | undefined = undefined;
+    let options: { value: string; label: string; price?: number }[] | undefined = undefined;
     if (newType === "select" || newType === "radio") {
-      options = newOptionsText
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean)
-        .map((opt) => ({ value: opt, label: opt }));
-      if (!options || options.length === 0) {
-        alert("Please provide at least one option (comma separated).");
-        return;
+      if (usePricedOptions) {
+        // Build options from the structured per-option price builder
+        const validEntries = newOptionsWithPrices.filter((o) => o.label.trim());
+        if (validEntries.length === 0) {
+          alert("Please add at least one option.");
+          return;
+        }
+        options = validEntries.map((o) => ({
+          value: o.label.trim().toLowerCase().replace(/[^a-z0-9]+/g, "_"),
+          label: o.label.trim(),
+          ...(o.price.trim() !== "" ? { price: Number(o.price) } : {}),
+        }));
+      } else {
+        // Legacy comma-separated plain text
+        options = newOptionsText
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean)
+          .map((opt) => ({ value: opt.toLowerCase().replace(/[^a-z0-9]+/g, "_"), label: opt }));
+        if (!options || options.length === 0) {
+          alert("Please provide at least one option (comma separated).");
+          return;
+        }
       }
     }
 
@@ -145,6 +163,8 @@ export default function FormBuilderPage({ params }: FormBuilderPageProps) {
     setNewLabel("");
     setNewPlaceholder("");
     setNewOptionsText("");
+    setNewOptionsWithPrices([]);
+    setUsePricedOptions(false);
     setNewHint("");
     setNewPanelVisible(false);
   }
@@ -363,7 +383,10 @@ export default function FormBuilderPage({ params }: FormBuilderPageProps) {
                       </div>
                       <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "0.25rem" }}>
                         ID: <code>{field.id}</code> | Span: {field.gridSpan || 1} col
-                        {field.options && ` | Options: ${field.options.map((o) => o.label).join(", ")}`}
+                        {field.options && ` | Options: ${field.options.map((o) => {
+                          const priceStr = typeof o.price === "number" ? ` (\u20b9${o.price})` : "";
+                          return o.label + priceStr;
+                        }).join(", ")}`}
                       </div>
                     </div>
 
@@ -471,25 +494,100 @@ export default function FormBuilderPage({ params }: FormBuilderPageProps) {
                 </div>
 
                 {(newType === "select" || newType === "radio") && (
-                  <div>
-                    <label style={{ fontSize: "0.8125rem", fontWeight: 600, color: "var(--text-secondary)" }}>
-                      Options (Comma separated) *
-                    </label>
-                    <input
-                      type="text"
-                      value={newOptionsText}
-                      onChange={(e) => setNewOptionsText(e.target.value)}
-                      placeholder="e.g. Small, Medium, Large, XL"
-                      style={{
-                        width: "100%",
-                        padding: "0.5rem 0.75rem",
-                        background: "var(--bg)",
-                        border: "1px solid var(--border)",
-                        borderRadius: "var(--radius-md)",
-                        color: "var(--text-primary)",
-                        marginTop: "0.25rem",
-                      }}
-                    />
+                  <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                      <label style={{ fontSize: "0.8125rem", fontWeight: 600, color: "var(--text-secondary)" }}>
+                        Options
+                      </label>
+                      <label style={{ display: "flex", alignItems: "center", gap: "0.35rem", fontSize: "0.8125rem", cursor: "pointer" }}>
+                        <input
+                          type="checkbox"
+                          checked={usePricedOptions}
+                          onChange={(e) => setUsePricedOptions(e.target.checked)}
+                        />
+                        Set price per option (for dynamic pricing)
+                      </label>
+                    </div>
+
+                    {!usePricedOptions ? (
+                      // Legacy: plain comma-separated options
+                      <input
+                        type="text"
+                        value={newOptionsText}
+                        onChange={(e) => setNewOptionsText(e.target.value)}
+                        placeholder="e.g. Small, Medium, Large, XL"
+                        style={{
+                          width: "100%",
+                          padding: "0.5rem 0.75rem",
+                          background: "var(--bg)",
+                          border: "1px solid var(--border)",
+                          borderRadius: "var(--radius-md)",
+                          color: "var(--text-primary)",
+                        }}
+                      />
+                    ) : (
+                      // Priced options builder
+                      <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                        {newOptionsWithPrices.map((opt, idx) => (
+                          <div key={idx} style={{ display: "grid", gridTemplateColumns: "1fr 120px 32px", gap: "0.5rem", alignItems: "center" }}>
+                            <input
+                              type="text"
+                              value={opt.label}
+                              onChange={(e) => {
+                                const updated = [...newOptionsWithPrices];
+                                updated[idx] = { ...updated[idx], label: e.target.value };
+                                setNewOptionsWithPrices(updated);
+                              }}
+                              placeholder="Option label (e.g. Single, Duo)"
+                              style={{
+                                padding: "0.5rem 0.75rem",
+                                background: "var(--bg)",
+                                border: "1px solid var(--border)",
+                                borderRadius: "var(--radius-md)",
+                                color: "var(--text-primary)",
+                                width: "100%",
+                              }}
+                            />
+                            <input
+                              type="number"
+                              min="0"
+                              step="1"
+                              value={opt.price}
+                              onChange={(e) => {
+                                const updated = [...newOptionsWithPrices];
+                                updated[idx] = { ...updated[idx], price: e.target.value };
+                                setNewOptionsWithPrices(updated);
+                              }}
+                              placeholder="₹ Price"
+                              style={{
+                                padding: "0.5rem 0.75rem",
+                                background: "var(--bg)",
+                                border: "1px solid var(--border)",
+                                borderRadius: "var(--radius-md)",
+                                color: "var(--text-primary)",
+                                width: "100%",
+                              }}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setNewOptionsWithPrices((prev) => prev.filter((_, i) => i !== idx))}
+                              className="btn btn-sm btn-outline"
+                              style={{ color: "var(--danger)", borderColor: "rgba(239,68,68,0.3)", padding: "0.4rem" }}
+                            >
+                              ×
+                            </button>
+                          </div>
+                        ))}
+                        <button
+                          type="button"
+                          onClick={() => setNewOptionsWithPrices((prev) => [...prev, { label: "", price: "" }])}
+                          className="btn btn-sm btn-outline"
+                          style={{ alignSelf: "flex-start" }}
+                        >
+                          + Add Option
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )}
 

@@ -46,6 +46,20 @@
   max-width: 520px;
 }
 
+.feeBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.75rem;
+  padding: 0.35rem 0.75rem;
+  background: rgba(245, 166, 35, 0.12);
+  border: 1px solid rgba(245, 166, 35, 0.3);
+  border-radius: 999px;
+  color: var(--accent, #f5a623);
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
 /* ── Form ───────────────────────────────────────────────────────────────── */
 .form {
   background: var(--surface);

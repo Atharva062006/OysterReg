@@ -485,6 +485,7 @@ export default function CandidatesPage({ params }: CandidatesPageProps) {
                   <th>Candidate</th>
                   <th>Roll / Identifier</th>
                   <th>Attendance</th>
+                  {event.razorpayEnabled && <th>Payment</th>}
                   <th>Stage Status</th>
                   {event.type !== "workshop" && <th>Assigned Panel</th>}
                   {event.type !== "workshop" && <th>Interviewer Score & Verdict</th>}
@@ -541,6 +542,45 @@ export default function CandidatesPage({ params }: CandidatesPageProps) {
                             {reg.present ? "✓ Present" : "Absent"}
                           </button>
                         </td>
+                        {event.razorpayEnabled && (
+                          <td>
+                            {reg.paymentStatus === "paid" ? (
+                              <span
+                                style={{
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: "0.25rem",
+                                  fontSize: "0.75rem",
+                                  fontWeight: 700,
+                                  padding: "0.2rem 0.5rem",
+                                  borderRadius: "999px",
+                                  background: "rgba(34, 197, 94, 0.15)",
+                                  color: "#22c55e",
+                                  border: "1px solid rgba(34, 197, 94, 0.3)",
+                                }}
+                                title={`Payment ID: ${reg.razorpayPaymentId || "N/A"}`}
+                              >
+                                ✓ Paid {reg.paymentAmount ? `₹${reg.paymentAmount}` : ""}
+                              </span>
+                            ) : reg.paymentStatus === "pending" ? (
+                              <span
+                                style={{
+                                  fontSize: "0.75rem",
+                                  fontWeight: 600,
+                                  padding: "0.2rem 0.5rem",
+                                  borderRadius: "999px",
+                                  background: "rgba(245, 166, 35, 0.15)",
+                                  color: "#f5a623",
+                                  border: "1px solid rgba(245, 166, 35, 0.3)",
+                                }}
+                              >
+                                ⏳ Pending
+                              </span>
+                            ) : (
+                              <span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>Free</span>
+                            )}
+                          </td>
+                        )}
                         <td>
                           <select
                             value={currentStageId}

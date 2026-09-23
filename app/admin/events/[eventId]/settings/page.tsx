@@ -29,6 +29,10 @@ export default function SettingsPage({ params }: SettingsPageProps) {
   const [closedMessage, setClosedMessage] = useState("");
   const [whatsappGroupLink, setWhatsappGroupLink] = useState("");
   const [registrationOpen, setRegistrationOpen] = useState(true);
+  const [razorpayEnabled, setRazorpayEnabled] = useState(false);
+  const [registrationFee, setRegistrationFee] = useState<number | "">("");
+  const [pricingType, setPricingType] = useState<"fixed" | "dynamic">("fixed");
+  const [pricingFieldId, setPricingFieldId] = useState<string>("");
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -57,6 +61,10 @@ export default function SettingsPage({ params }: SettingsPageProps) {
       setClosedMessage(ev.closedMessage || "Registrations for this event are currently closed.");
       setWhatsappGroupLink(ev.whatsappGroupLink || "");
       setRegistrationOpen(ev.registrationOpen);
+      setRazorpayEnabled(!!ev.razorpayEnabled);
+      setRegistrationFee(ev.registrationFee !== undefined ? ev.registrationFee : "");
+      setPricingType(ev.pricingType ?? "fixed");
+      setPricingFieldId(ev.pricingFieldId ?? "");
     } catch (err) {
       console.error(err);
       setError("Failed to load settings.");
@@ -87,6 +95,10 @@ export default function SettingsPage({ params }: SettingsPageProps) {
         closedMessage: closedMessage.trim(),
         whatsappGroupLink: whatsappGroupLink.trim(),
         registrationOpen,
+        razorpayEnabled,
+        registrationFee: razorpayEnabled && registrationFee !== "" ? Number(registrationFee) : 0,
+        pricingType: razorpayEnabled ? pricingType : "fixed",
+        pricingFieldId: razorpayEnabled && pricingType === "dynamic" ? pricingFieldId.trim() : "",
       });
       setSuccess("Event settings updated successfully.");
       setTimeout(() => setSuccess(""), 3000);
@@ -291,6 +303,181 @@ export default function SettingsPage({ params }: SettingsPageProps) {
                 />
               </div>
             )}
+
+            {/* Razorpay Payment Integration Section */}
+            <div
+              style={{
+                borderTop: "1px solid var(--border)",
+                paddingTop: "1.25rem",
+                marginTop: "0.5rem",
+                display: "flex",
+                flexDirection: "column",
+                gap: "1rem",
+              }}
+            >
+              <div>
+                <h3 style={{ fontSize: "1rem", fontWeight: 700, color: "var(--text-primary)" }}>
+                  Payment Integration (Razorpay)
+                </h3>
+                <p style={{ fontSize: "0.8125rem", color: "var(--text-secondary)", marginTop: "0.25rem" }}>
+                  Enable payment collection for registrations. Free events do not require Razorpay.
+                </p>
+              </div>
+
+              <label
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.5rem",
+                  fontWeight: 600,
+                  color: "var(--text-primary)",
+                  cursor: "pointer",
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={razorpayEnabled}
+                  onChange={(e) => setRazorpayEnabled(e.target.checked)}
+                />
+                Require Paid Registration (Razorpay)
+              </label>
+
+              {razorpayEnabled && (
+                <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+                  {/* Pricing Mode Toggle */}
+                  <div>
+                    <label style={{ fontSize: "0.875rem", fontWeight: 600, color: "var(--text-secondary)" }}>
+                      Pricing Mode
+                    </label>
+                    <div style={{ display: "flex", gap: "0.75rem", marginTop: "0.5rem" }}>
+                      <label style={{ display: "flex", alignItems: "center", gap: "0.4rem", cursor: "pointer", fontSize: "0.875rem" }}>
+                        <input
+                          type="radio"
+                          name="pricingType"
+                          value="fixed"
+                          checked={pricingType === "fixed"}
+                          onChange={() => setPricingType("fixed")}
+                        />
+                        Flat Fee (same for everyone)
+                      </label>
+                      <label style={{ display: "flex", alignItems: "center", gap: "0.4rem", cursor: "pointer", fontSize: "0.875rem" }}>
+                        <input
+                          type="radio"
+                          name="pricingType"
+                          value="dynamic"
+                          checked={pricingType === "dynamic"}
+                          onChange={() => setPricingType("dynamic")}
+                        />
+                        Dynamic (price per form option)
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Fixed Fee Input */}
+                  {pricingType === "fixed" && (
+                    <div style={{ maxWidth: "300px" }}>
+                      <label style={{ fontSize: "0.875rem", fontWeight: 600, color: "var(--text-secondary)" }}>
+                        Registration Fee (₹ INR) *
+                      </label>
+                      <div style={{ position: "relative", marginTop: "0.375rem" }}>
+                        <span
+                          style={{
+                            position: "absolute",
+                            left: "0.75rem",
+                            top: "50%",
+                            transform: "translateY(-50%)",
+                            color: "var(--text-muted)",
+                            fontWeight: 600,
+                          }}
+                        >
+                          ₹
+                        </span>
+                        <input
+                          type="number"
+                          min="1"
+                          step="1"
+                          required={razorpayEnabled && pricingType === "fixed"}
+                          value={registrationFee}
+                          onChange={(e) => setRegistrationFee(e.target.value === "" ? "" : Number(e.target.value))}
+                          placeholder="e.g. 200"
+                          style={{
+                            width: "100%",
+                            padding: "0.75rem 1rem 0.75rem 2rem",
+                            background: "var(--bg)",
+                            border: "1px solid var(--border)",
+                            borderRadius: "var(--radius-md)",
+                            color: "var(--text-primary)",
+                            fontWeight: 600,
+                          }}
+                        />
+                      </div>
+                      <p style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "0.35rem" }}>
+                        Amount charged per applicant prior to recording registration.
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Dynamic Pricing: pricing field selector */}
+                  {pricingType === "dynamic" && (
+                    <div style={{ maxWidth: "420px" }}>
+                      <label style={{ fontSize: "0.875rem", fontWeight: 600, color: "var(--text-secondary)" }}>
+                        Pricing Field ID *
+                      </label>
+                      {event && event.formSchema.filter((f) => f.type === "select" || f.type === "radio").length > 0 ? (
+                        <select
+                          value={pricingFieldId}
+                          onChange={(e) => setPricingFieldId(e.target.value)}
+                          required={pricingType === "dynamic"}
+                          style={{
+                            width: "100%",
+                            padding: "0.75rem 1rem",
+                            background: "var(--bg)",
+                            border: "1px solid var(--border)",
+                            borderRadius: "var(--radius-md)",
+                            color: "var(--text-primary)",
+                            marginTop: "0.375rem",
+                          }}
+                        >
+                          <option value="">— Select a field —</option>
+                          {event.formSchema
+                            .filter((f) => f.type === "select" || f.type === "radio")
+                            .map((f) => (
+                              <option key={f.id} value={f.id}>
+                                {f.label} (ID: {f.id})
+                              </option>
+                            ))}
+                        </select>
+                      ) : (
+                        <>
+                          <input
+                            type="text"
+                            value={pricingFieldId}
+                            onChange={(e) => setPricingFieldId(e.target.value)}
+                            placeholder="e.g. entry_type"
+                            required={pricingType === "dynamic"}
+                            style={{
+                              width: "100%",
+                              padding: "0.75rem 1rem",
+                              background: "var(--bg)",
+                              border: "1px solid var(--border)",
+                              borderRadius: "var(--radius-md)",
+                              color: "var(--text-primary)",
+                              marginTop: "0.375rem",
+                            }}
+                          />
+                          <p style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "0.35rem" }}>
+                            No select/radio fields found in form schema. Enter the field ID manually, or add a select/radio field in the Form Builder first.
+                          </p>
+                        </>
+                      )}
+                      <p style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "0.5rem" }}>
+                        Each option on this field must have a price set in the Form Builder. The price is resolved securely on the server — users cannot tamper with it.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
 
             <div>
               <button type="submit" disabled={saving} className="btn btn-primary" id="save-settings-btn">
