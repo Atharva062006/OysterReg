@@ -43,13 +43,6 @@ export default function HomePage() {
         >
           Register Now
         </Link>
-        <Link
-          href="/why-join-us"
-          id="cta-why-join"
-          className={`${styles.btn} ${styles.btnOutline}`}
-        >
-          Why Join Us
-        </Link>
       </div>
     </main>
   );
