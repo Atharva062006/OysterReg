@@ -44,6 +44,40 @@ export default function HomePage() {
           Register Now
         </Link>
       </div>
+
+      {/* Social Links */}
+      <div className={styles.socialBar} aria-label="Social media links">
+        <a
+          href="https://www.instagram.com/oyster_kode/"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Follow Oyster Kode Club on Instagram"
+          className={styles.socialLink}
+        >
+          <Image
+            src="/instagram-logo-instagram-icon-transparent-free-png.webp"
+            alt="Instagram"
+            width={30}
+            height={30}
+            className={styles.socialIcon}
+          />
+        </a>
+        <a
+          href="https://www.linkedin.com/in/oyster-kode-club/"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Connect with Oyster Kode Club on LinkedIn"
+          className={styles.socialLink}
+        >
+          <Image
+            src="/linkedin-logo-linkedin-icon-transparent-free-png.webp"
+            alt="LinkedIn"
+            width={30}
+            height={30}
+            className={styles.socialIcon}
+          />
+        </a>
+      </div>
     </main>
   );
 }
