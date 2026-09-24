@@ -1,6 +1,6 @@
 "use client";
 
-import { FormFieldConfig } from "@/lib/firebase";
+import { FormFieldConfig, isFieldVisible } from "@/lib/firebase";
 import FormField from "./FormField";
 import styles from "@/app/register/register.module.css";
 
@@ -17,8 +17,8 @@ export default function DynamicFormRenderer({
   errors,
   onChange,
 }: DynamicFormRendererProps) {
-  // Group schema fields into pairs for grid2 or full span
-  const fields = [...schema];
+  // Only render fields that are currently visible based on conditional rules
+  const fields = schema.filter((f) => isFieldVisible(f, formData));
   const renderedElements: React.ReactNode[] = [];
 
   let i = 0;

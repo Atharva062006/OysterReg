@@ -214,14 +214,23 @@ export default function CandidatesPage({ params }: CandidatesPageProps) {
   }
 
   function exportCSV() {
+    const customFields = event?.formSchema || [];
     const headers = [
       "Name", "Roll Number", "Email", "Phone", "Department",
-      "Year", "Gender", "Coded Before", "Stage Status", "Present", "Panel Assigned", "Panel Verdict", "Overall Score"
+      "Year", "Gender", "Coded Before", "Stage Status", "Present",
+      "Payment Status", "Payment Amount", "Order ID", "Payment ID",
+      "Panel Assigned", "Panel Verdict", "Overall Score",
+      ...customFields.map((f) => f.label),
     ];
     const rows = filtered.map((r) => {
       const panelObj = r.panelId ? panels.find(p => p.id === r.panelId) : undefined;
       const verdictObj = r.panelId ? r.interviews?.[r.panelId] : undefined;
       
+      const customValues = customFields.map((f) => {
+        const val = r.formData?.[f.id] ?? (r as any)[f.id] ?? "";
+        return typeof val === "object" ? JSON.stringify(val) : String(val ?? "");
+      });
+
       return [
         r.name,
         r.rollNumber,
@@ -233,9 +242,14 @@ export default function CandidatesPage({ params }: CandidatesPageProps) {
         r.hasCodedBefore ? "Yes" : "No",
         r.status || "registered",
         r.present ? "Yes" : "No",
+        r.paymentStatus || "free",
+        r.paymentAmount ? `₹${r.paymentAmount}` : "0",
+        r.razorpayOrderId || "",
+        r.razorpayPaymentId || "",
         panelObj?.name || "Unassigned",
         verdictObj?.verdict || "pending",
-        verdictObj?.overallScore || "N/A"
+        verdictObj?.overallScore || "N/A",
+        ...customValues,
       ];
     });
     const csv = [headers, ...rows].map((row) => row.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n");

@@ -61,6 +61,26 @@ export default function FormBuilderPage({ params }: FormBuilderPageProps) {
   const [usePricedOptions, setUsePricedOptions] = useState(false);
   const [newHint, setNewHint] = useState("");
   const [newSpan, setNewSpan] = useState<1 | 2>(1);
+  // Conditional visibility state
+  const [newEnableCondition, setNewEnableCondition] = useState(false);
+  const [newConditionFieldId, setNewConditionFieldId] = useState("");
+  const [newConditionValue, setNewConditionValue] = useState("");
+
+  // Edit field modal states
+  const [editingFieldId, setEditingFieldId] = useState<string | null>(null);
+  const [editLabel, setEditLabel] = useState("");
+  const [editType, setEditType] = useState<FormFieldConfig["type"]>("text");
+  const [editPlaceholder, setEditPlaceholder] = useState("");
+  const [editRequired, setEditRequired] = useState(true);
+  const [editPanelVisible, setEditPanelVisible] = useState(false);
+  const [editOptionsWithPrices, setEditOptionsWithPrices] = useState<{ label: string; price: string }[]>([]);
+  const [editUsePricedOptions, setEditUsePricedOptions] = useState(false);
+  const [editOptionsText, setEditOptionsText] = useState("");
+  const [editHint, setEditHint] = useState("");
+  const [editSpan, setEditSpan] = useState<1 | 2>(1);
+  const [editEnableCondition, setEditEnableCondition] = useState(false);
+  const [editConditionFieldId, setEditConditionFieldId] = useState("");
+  const [editConditionValue, setEditConditionValue] = useState("");
 
   // Preview form test state
   const [previewData, setPreviewData] = useState<Record<string, any>>({});
@@ -147,6 +167,11 @@ export default function FormBuilderPage({ params }: FormBuilderPageProps) {
       }
     }
 
+    const condition =
+      newEnableCondition && newConditionFieldId && newConditionValue.trim()
+        ? { fieldId: newConditionFieldId, value: newConditionValue.trim() }
+        : undefined;
+
     const field: FormFieldConfig = {
       id,
       label: newLabel.trim(),
@@ -157,6 +182,7 @@ export default function FormBuilderPage({ params }: FormBuilderPageProps) {
       hint: newHint.trim() || undefined,
       gridSpan: newSpan,
       panelVisible: newPanelVisible,
+      condition,
     };
 
     setFormSchema((prev) => [...prev, field]);
@@ -167,6 +193,106 @@ export default function FormBuilderPage({ params }: FormBuilderPageProps) {
     setUsePricedOptions(false);
     setNewHint("");
     setNewPanelVisible(false);
+    setNewEnableCondition(false);
+    setNewConditionFieldId("");
+    setNewConditionValue("");
+  }
+
+  function handleStartEdit(field: FormFieldConfig) {
+    setEditingFieldId(field.id);
+    setEditLabel(field.label);
+    setEditType(field.type);
+    setEditPlaceholder(field.placeholder || "");
+    setEditRequired(field.required);
+    setEditPanelVisible(!!field.panelVisible);
+    setEditHint(field.hint || "");
+    setEditSpan(field.gridSpan || 1);
+
+    if (field.options && field.options.length > 0) {
+      const hasPrices = field.options.some((o) => typeof o.price === "number");
+      setEditUsePricedOptions(hasPrices);
+      setEditOptionsWithPrices(
+        field.options.map((o) => ({
+          label: o.label,
+          price: typeof o.price === "number" ? String(o.price) : "",
+        }))
+      );
+      setEditOptionsText(field.options.map((o) => o.label).join(", "));
+    } else {
+      setEditOptionsWithPrices([]);
+      setEditUsePricedOptions(false);
+      setEditOptionsText("");
+    }
+
+    if (field.condition && field.condition.fieldId) {
+      setEditEnableCondition(true);
+      setEditConditionFieldId(field.condition.fieldId);
+      setEditConditionValue(field.condition.value || "");
+    } else {
+      setEditEnableCondition(false);
+      setEditConditionFieldId("");
+      setEditConditionValue("");
+    }
+  }
+
+  function handleSaveEdit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editingFieldId || !editLabel.trim()) return;
+
+    let options: { value: string; label: string; price?: number }[] | undefined = undefined;
+    if (editType === "select" || editType === "radio") {
+      if (editUsePricedOptions) {
+        const valid = editOptionsWithPrices.filter((o) => o.label.trim());
+        if (valid.length === 0) {
+          alert("Please provide at least one option.");
+          return;
+        }
+        options = valid.map((o) => ({
+          value: o.label.trim().toLowerCase().replace(/[^a-z0-9]+/g, "_"),
+          label: o.label.trim(),
+          ...(o.price.trim() !== "" ? { price: Number(o.price) } : {}),
+        }));
+      } else {
+        const parsed = editOptionsText
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean);
+        if (parsed.length === 0) {
+          alert("Please provide at least one option (comma separated).");
+          return;
+        }
+        options = parsed.map((opt) => ({
+          value: opt.toLowerCase().replace(/[^a-z0-9]+/g, "_"),
+          label: opt,
+        }));
+      }
+    }
+
+    const condition =
+      editEnableCondition && editConditionFieldId && editConditionValue.trim()
+        ? { fieldId: editConditionFieldId, value: editConditionValue.trim() }
+        : undefined;
+
+    setFormSchema((prev) =>
+      prev.map((f) =>
+        f.id === editingFieldId
+          ? {
+              ...f,
+              label: editLabel.trim(),
+              type: editType,
+              placeholder: editPlaceholder.trim() || undefined,
+              required: editRequired,
+              options,
+              hint: editHint.trim() || undefined,
+              gridSpan: editSpan,
+              panelVisible: editPanelVisible,
+              condition,
+            }
+          : f
+      )
+    );
+
+    setEditingFieldId(null);
   }
 
   function handleTogglePanelVisible(id: string) {
@@ -368,6 +494,21 @@ export default function FormBuilderPage({ params }: FormBuilderPageProps) {
                         <span style={{ fontWeight: 700, color: "var(--text-primary)" }}>{field.label}</span>
                         {field.required && <span style={{ color: "var(--danger)", fontSize: "0.75rem" }}>*Required</span>}
                         {field.panelVisible && <span style={{ color: "var(--accent)", fontSize: "0.75rem", border: "1px solid var(--accent)", padding: "0.1rem 0.3rem", borderRadius: "var(--radius-sm)" }}>👁 Panel Visible</span>}
+                        {field.condition && (
+                          <span
+                            style={{
+                              fontSize: "0.6875rem",
+                              background: "rgba(245, 166, 35, 0.15)",
+                              border: "1px solid rgba(245, 166, 35, 0.4)",
+                              color: "var(--accent)",
+                              padding: "0.1rem 0.35rem",
+                              borderRadius: "var(--radius-sm)",
+                              fontWeight: 500,
+                            }}
+                          >
+                            ⚡ Only when [{formSchema.find((f) => f.id === field.condition?.fieldId)?.label || field.condition.fieldId}] = &quot;{field.condition.value}&quot;
+                          </span>
+                        )}
                         <span
                           style={{
                             fontSize: "0.6875rem",
@@ -414,6 +555,14 @@ export default function FormBuilderPage({ params }: FormBuilderPageProps) {
                         title={field.panelVisible ? "Hide from Panel" : "Show in Panel"}
                       >
                         {field.panelVisible ? "👁 Hide" : "👁 Show"}
+                      </button>
+                      <button
+                        onClick={() => handleStartEdit(field)}
+                        className="btn btn-sm btn-outline"
+                        style={{ color: "var(--accent)", borderColor: "rgba(245, 166, 35, 0.4)" }}
+                        title="Edit Field"
+                      >
+                        ✏️ Edit
                       </button>
                       <button
                         onClick={() => handleRemoveField(field.id)}
@@ -636,6 +785,139 @@ export default function FormBuilderPage({ params }: FormBuilderPageProps) {
                   </div>
                 </div>
 
+                {/* Conditional Visibility Option */}
+                {formSchema.filter((f) => f.type === "select" || f.type === "radio").length > 0 && (
+                  <div
+                    style={{
+                      background: "var(--bg)",
+                      border: "1px solid var(--border)",
+                      borderRadius: "var(--radius-md)",
+                      padding: "1rem",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "0.75rem",
+                    }}
+                  >
+                    <label
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.5rem",
+                        fontSize: "0.875rem",
+                        fontWeight: 600,
+                        color: "var(--text-primary)",
+                        cursor: "pointer",
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={newEnableCondition}
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          setNewEnableCondition(checked);
+                          if (checked && !newConditionFieldId) {
+                            const parents = formSchema.filter((f) => f.type === "select" || f.type === "radio");
+                            if (parents.length > 0) {
+                              setNewConditionFieldId(parents[0].id);
+                              if (parents[0].options && parents[0].options.length > 0) {
+                                setNewConditionValue(parents[0].options[0].value);
+                              }
+                            }
+                          }
+                        }}
+                      />
+                      Conditional Visibility: reveal this field only when a specific option is chosen (e.g. Duo)
+                    </label>
+
+                    {newEnableCondition && (
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginTop: "0.25rem" }}>
+                        <div>
+                          <label style={{ fontSize: "0.75rem", color: "var(--text-secondary)", display: "block", marginBottom: "0.35rem" }}>
+                            Triggering Field
+                          </label>
+                          <select
+                            value={newConditionFieldId}
+                            onChange={(e) => {
+                              const newFid = e.target.value;
+                              setNewConditionFieldId(newFid);
+                              const p = formSchema.find((f) => f.id === newFid);
+                              if (p?.options && p.options.length > 0) {
+                                setNewConditionValue(p.options[0].value);
+                              }
+                            }}
+                            style={{
+                              width: "100%",
+                              padding: "0.45rem 0.65rem",
+                              background: "var(--surface)",
+                              border: "1px solid var(--border)",
+                              borderRadius: "var(--radius-sm)",
+                              color: "var(--text-primary)",
+                              fontSize: "0.875rem",
+                            }}
+                          >
+                            {formSchema
+                              .filter((f) => f.type === "select" || f.type === "radio")
+                              .map((pf) => (
+                                <option key={pf.id} value={pf.id}>
+                                  {pf.label} ({pf.id})
+                                </option>
+                              ))}
+                          </select>
+                        </div>
+
+                        <div>
+                          <label style={{ fontSize: "0.75rem", color: "var(--text-secondary)", display: "block", marginBottom: "0.35rem" }}>
+                            Reveal when value equals:
+                          </label>
+                          {(() => {
+                            const selectedParent = formSchema.find((pf) => pf.id === newConditionFieldId);
+                            if (selectedParent?.options && selectedParent.options.length > 0) {
+                              return (
+                                <select
+                                  value={newConditionValue}
+                                  onChange={(e) => setNewConditionValue(e.target.value)}
+                                  style={{
+                                    width: "100%",
+                                    padding: "0.45rem 0.65rem",
+                                    background: "var(--surface)",
+                                    border: "1px solid var(--border)",
+                                    borderRadius: "var(--radius-sm)",
+                                    color: "var(--text-primary)",
+                                    fontSize: "0.875rem",
+                                  }}
+                                >
+                                  {selectedParent.options.map((opt) => (
+                                    <option key={opt.value} value={opt.value}>
+                                      {opt.label} ({opt.value})
+                                    </option>
+                                  ))}
+                                </select>
+                              );
+                            }
+                            return (
+                              <input
+                                type="text"
+                                value={newConditionValue}
+                                onChange={(e) => setNewConditionValue(e.target.value)}
+                                placeholder="e.g. duo"
+                                style={{
+                                  width: "100%",
+                                  padding: "0.45rem 0.65rem",
+                                  background: "var(--surface)",
+                                  border: "1px solid var(--border)",
+                                  borderRadius: "var(--radius-sm)",
+                                  color: "var(--text-primary)",
+                                  fontSize: "0.875rem",
+                                }}
+                              />
+                            );
+                          })()}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
                   <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.875rem", color: "var(--text-primary)", cursor: "pointer" }}>
                     <input
@@ -703,6 +985,458 @@ export default function FormBuilderPage({ params }: FormBuilderPageProps) {
               </div>
             </div>
           </section>
+        )}
+
+        {/* EDIT FIELD MODAL */}
+        {editingFieldId && (
+          <div
+            style={{
+              position: "fixed",
+              inset: 0,
+              background: "rgba(0, 0, 0, 0.75)",
+              backdropFilter: "blur(6px)",
+              zIndex: 9999,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "1rem",
+            }}
+            onClick={() => setEditingFieldId(null)}
+          >
+            <div
+              style={{
+                background: "var(--surface)",
+                border: "1.5px solid var(--border)",
+                borderRadius: "var(--radius-lg)",
+                padding: "1.75rem",
+                width: "100%",
+                maxWidth: "680px",
+                maxHeight: "90vh",
+                overflowY: "auto",
+                boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)",
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.25rem" }}>
+                <div>
+                  <h3 style={{ fontSize: "1.25rem", fontWeight: 700, color: "var(--text-primary)" }}>
+                    Edit Field: {editLabel || editingFieldId}
+                  </h3>
+                  <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "0.15rem" }}>
+                    Field ID: <code>{editingFieldId}</code> (Immutable ID ensures existing registrations stay intact)
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setEditingFieldId(null)}
+                  style={{
+                    background: "transparent",
+                    border: "none",
+                    color: "var(--text-muted)",
+                    fontSize: "1.5rem",
+                    cursor: "pointer",
+                    padding: "0.25rem",
+                    lineHeight: 1,
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
+
+              <form onSubmit={handleSaveEdit} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+                  <div>
+                    <label style={{ fontSize: "0.8125rem", fontWeight: 600, color: "var(--text-secondary)" }}>
+                      Field Label *
+                    </label>
+                    <input
+                      type="text"
+                      value={editLabel}
+                      onChange={(e) => setEditLabel(e.target.value)}
+                      required
+                      style={{
+                        width: "100%",
+                        padding: "0.5rem 0.75rem",
+                        background: "var(--bg)",
+                        border: "1px solid var(--border)",
+                        borderRadius: "var(--radius-md)",
+                        color: "var(--text-primary)",
+                        marginTop: "0.25rem",
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: "0.8125rem", fontWeight: 600, color: "var(--text-secondary)" }}>
+                      Field Type
+                    </label>
+                    <select
+                      value={editType}
+                      onChange={(e) => setEditType(e.target.value as any)}
+                      style={{
+                        width: "100%",
+                        padding: "0.5rem 0.75rem",
+                        background: "var(--bg)",
+                        border: "1px solid var(--border)",
+                        borderRadius: "var(--radius-md)",
+                        color: "var(--text-primary)",
+                        marginTop: "0.25rem",
+                      }}
+                    >
+                      {FIELD_TYPES.map((t) => (
+                        <option key={t.value} value={t.value}>
+                          {t.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {(editType === "select" || editType === "radio") && (
+                  <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                      <label style={{ fontSize: "0.8125rem", fontWeight: 600, color: "var(--text-secondary)" }}>
+                        Options
+                      </label>
+                      <label style={{ display: "flex", alignItems: "center", gap: "0.35rem", fontSize: "0.8125rem", cursor: "pointer" }}>
+                        <input
+                          type="checkbox"
+                          checked={editUsePricedOptions}
+                          onChange={(e) => {
+                            const checked = e.target.checked;
+                            setEditUsePricedOptions(checked);
+                            if (checked && editOptionsWithPrices.length === 0 && editOptionsText.trim()) {
+                              setEditOptionsWithPrices(
+                                editOptionsText
+                                  .split(",")
+                                  .map((s) => s.trim())
+                                  .filter(Boolean)
+                                  .map((s) => ({ label: s, price: "" }))
+                              );
+                            }
+                          }}
+                        />
+                        Set price per option (for dynamic pricing)
+                      </label>
+                    </div>
+
+                    {!editUsePricedOptions ? (
+                      <input
+                        type="text"
+                        value={editOptionsText}
+                        onChange={(e) => setEditOptionsText(e.target.value)}
+                        placeholder="e.g. Small, Medium, Large, XL"
+                        style={{
+                          width: "100%",
+                          padding: "0.5rem 0.75rem",
+                          background: "var(--bg)",
+                          border: "1px solid var(--border)",
+                          borderRadius: "var(--radius-md)",
+                          color: "var(--text-primary)",
+                        }}
+                      />
+                    ) : (
+                      <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                        {editOptionsWithPrices.map((opt, idx) => (
+                          <div key={idx} style={{ display: "grid", gridTemplateColumns: "1fr 120px 32px", gap: "0.5rem", alignItems: "center" }}>
+                            <input
+                              type="text"
+                              value={opt.label}
+                              onChange={(e) => {
+                                const updated = [...editOptionsWithPrices];
+                                updated[idx] = { ...updated[idx], label: e.target.value };
+                                setEditOptionsWithPrices(updated);
+                              }}
+                              placeholder="Option label (e.g. Single, Duo)"
+                              style={{
+                                padding: "0.5rem 0.75rem",
+                                background: "var(--bg)",
+                                border: "1px solid var(--border)",
+                                borderRadius: "var(--radius-md)",
+                                color: "var(--text-primary)",
+                                width: "100%",
+                              }}
+                            />
+                            <input
+                              type="number"
+                              min="0"
+                              step="1"
+                              value={opt.price}
+                              onChange={(e) => {
+                                const updated = [...editOptionsWithPrices];
+                                updated[idx] = { ...updated[idx], price: e.target.value };
+                                setEditOptionsWithPrices(updated);
+                              }}
+                              placeholder="₹ Price"
+                              style={{
+                                padding: "0.5rem 0.75rem",
+                                background: "var(--bg)",
+                                border: "1px solid var(--border)",
+                                borderRadius: "var(--radius-md)",
+                                color: "var(--text-primary)",
+                                width: "100%",
+                              }}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setEditOptionsWithPrices((prev) => prev.filter((_, i) => i !== idx))}
+                              className="btn btn-sm btn-outline"
+                              style={{ color: "var(--danger)", borderColor: "rgba(239,68,68,0.3)", padding: "0.4rem" }}
+                            >
+                              ×
+                            </button>
+                          </div>
+                        ))}
+                        <button
+                          type="button"
+                          onClick={() => setEditOptionsWithPrices((prev) => [...prev, { label: "", price: "" }])}
+                          className="btn btn-sm btn-outline"
+                          style={{ alignSelf: "flex-start" }}
+                        >
+                          + Add Option
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+                  <div>
+                    <label style={{ fontSize: "0.8125rem", fontWeight: 600, color: "var(--text-secondary)" }}>
+                      Placeholder Text
+                    </label>
+                    <input
+                      type="text"
+                      value={editPlaceholder}
+                      onChange={(e) => setEditPlaceholder(e.target.value)}
+                      placeholder="e.g. Select your size..."
+                      style={{
+                        width: "100%",
+                        padding: "0.5rem 0.75rem",
+                        background: "var(--bg)",
+                        border: "1px solid var(--border)",
+                        borderRadius: "var(--radius-md)",
+                        color: "var(--text-primary)",
+                        marginTop: "0.25rem",
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: "0.8125rem", fontWeight: 600, color: "var(--text-secondary)" }}>
+                      Layout Width
+                    </label>
+                    <select
+                      value={editSpan}
+                      onChange={(e) => setEditSpan(Number(e.target.value) as 1 | 2)}
+                      style={{
+                        width: "100%",
+                        padding: "0.5rem 0.75rem",
+                        background: "var(--bg)",
+                        border: "1px solid var(--border)",
+                        borderRadius: "var(--radius-md)",
+                        color: "var(--text-primary)",
+                        marginTop: "0.25rem",
+                      }}
+                    >
+                      <option value={1}>Half Width (1 Column)</option>
+                      <option value={2}>Full Width (2 Columns)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ fontSize: "0.8125rem", fontWeight: 600, color: "var(--text-secondary)" }}>
+                    Hint Text (optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={editHint}
+                    onChange={(e) => setEditHint(e.target.value)}
+                    placeholder="e.g. Please provide a clear and active email"
+                    style={{
+                      width: "100%",
+                      padding: "0.5rem 0.75rem",
+                      background: "var(--bg)",
+                      border: "1px solid var(--border)",
+                      borderRadius: "var(--radius-md)",
+                      color: "var(--text-primary)",
+                      marginTop: "0.25rem",
+                    }}
+                  />
+                </div>
+
+                {/* Conditional Visibility Option for Editing */}
+                {formSchema.filter((f) => f.id !== editingFieldId && (f.type === "select" || f.type === "radio")).length > 0 && (
+                  <div
+                    style={{
+                      background: "var(--bg)",
+                      border: "1px solid var(--border)",
+                      borderRadius: "var(--radius-md)",
+                      padding: "1rem",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "0.75rem",
+                    }}
+                  >
+                    <label
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.5rem",
+                        fontSize: "0.875rem",
+                        fontWeight: 600,
+                        color: "var(--text-primary)",
+                        cursor: "pointer",
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={editEnableCondition}
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          setEditEnableCondition(checked);
+                          if (checked && !editConditionFieldId) {
+                            const parents = formSchema.filter((f) => f.id !== editingFieldId && (f.type === "select" || f.type === "radio"));
+                            if (parents.length > 0) {
+                              setEditConditionFieldId(parents[0].id);
+                              if (parents[0].options && parents[0].options.length > 0) {
+                                setEditConditionValue(parents[0].options[0].value);
+                              }
+                            }
+                          }
+                        }}
+                      />
+                      Conditional Visibility: reveal this field only when a specific option is chosen (e.g. Duo)
+                    </label>
+
+                    {editEnableCondition && (
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginTop: "0.25rem" }}>
+                        <div>
+                          <label style={{ fontSize: "0.75rem", color: "var(--text-secondary)", display: "block", marginBottom: "0.35rem" }}>
+                            Triggering Field
+                          </label>
+                          <select
+                            value={editConditionFieldId}
+                            onChange={(e) => {
+                              const newFid = e.target.value;
+                              setEditConditionFieldId(newFid);
+                              const p = formSchema.find((f) => f.id === newFid);
+                              if (p?.options && p.options.length > 0) {
+                                setEditConditionValue(p.options[0].value);
+                              }
+                            }}
+                            style={{
+                              width: "100%",
+                              padding: "0.45rem 0.65rem",
+                              background: "var(--surface)",
+                              border: "1px solid var(--border)",
+                              borderRadius: "var(--radius-sm)",
+                              color: "var(--text-primary)",
+                              fontSize: "0.875rem",
+                            }}
+                          >
+                            {formSchema
+                              .filter((f) => f.id !== editingFieldId && (f.type === "select" || f.type === "radio"))
+                              .map((pf) => (
+                                <option key={pf.id} value={pf.id}>
+                                  {pf.label} ({pf.id})
+                                </option>
+                              ))}
+                          </select>
+                        </div>
+
+                        <div>
+                          <label style={{ fontSize: "0.75rem", color: "var(--text-secondary)", display: "block", marginBottom: "0.35rem" }}>
+                            Reveal when value equals:
+                          </label>
+                          {(() => {
+                            const selectedParent = formSchema.find((pf) => pf.id === editConditionFieldId);
+                            if (selectedParent?.options && selectedParent.options.length > 0) {
+                              return (
+                                <select
+                                  value={editConditionValue}
+                                  onChange={(e) => setEditConditionValue(e.target.value)}
+                                  style={{
+                                    width: "100%",
+                                    padding: "0.45rem 0.65rem",
+                                    background: "var(--surface)",
+                                    border: "1px solid var(--border)",
+                                    borderRadius: "var(--radius-sm)",
+                                    color: "var(--text-primary)",
+                                    fontSize: "0.875rem",
+                                  }}
+                                >
+                                  {selectedParent.options.map((opt) => (
+                                    <option key={opt.value} value={opt.value}>
+                                      {opt.label} ({opt.value})
+                                    </option>
+                                  ))}
+                                </select>
+                              );
+                            }
+                            return (
+                              <input
+                                type="text"
+                                value={editConditionValue}
+                                onChange={(e) => setEditConditionValue(e.target.value)}
+                                placeholder="e.g. duo"
+                                style={{
+                                  width: "100%",
+                                  padding: "0.45rem 0.65rem",
+                                  background: "var(--surface)",
+                                  border: "1px solid var(--border)",
+                                  borderRadius: "var(--radius-sm)",
+                                  color: "var(--text-primary)",
+                                  fontSize: "0.875rem",
+                                }}
+                              />
+                            );
+                          })()}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+                  <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.875rem", color: "var(--text-primary)", cursor: "pointer" }}>
+                    <input
+                      type="checkbox"
+                      checked={editRequired}
+                      onChange={(e) => setEditRequired(e.target.checked)}
+                    />
+                    Field is Required
+                  </label>
+
+                  <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.875rem", color: "var(--text-primary)", cursor: "pointer" }}>
+                    <input
+                      type="checkbox"
+                      checked={editPanelVisible}
+                      onChange={(e) => setEditPanelVisible(e.target.checked)}
+                    />
+                    Show in Panel View
+                  </label>
+                </div>
+
+                <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem", marginTop: "1rem", paddingTop: "1rem", borderTop: "1px solid var(--border)" }}>
+                  <button
+                    type="button"
+                    onClick={() => setEditingFieldId(null)}
+                    className="btn btn-outline"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="btn btn-primary"
+                  >
+                    Save Changes
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
         )}
       </main>
     </div>

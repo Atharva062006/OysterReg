@@ -7,6 +7,7 @@ import {
   getEventById,
   submitEventRegistration,
   Event,
+  isFieldVisible,
 } from "@/lib/firebase";
 import { loadRazorpayScript } from "@/lib/razorpay";
 import DynamicFormRenderer from "@/components/DynamicFormRenderer";
@@ -71,6 +72,7 @@ export default function EventRegisterPage({ params }: EventRegisterPageProps) {
     const e: Record<string, string> = {};
 
     event.formSchema.forEach((field) => {
+      if (!isFieldVisible(field, formData)) return;
       const val = formData[field.id];
       if (field.required) {
         if (val === undefined || val === null || String(val).trim() === "") {

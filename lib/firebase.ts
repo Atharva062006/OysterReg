@@ -113,6 +113,11 @@ export interface FormOption {
   price?: number; // Optional per-option fee in INR (e.g. 59, 89)
 }
 
+export interface FieldCondition {
+  fieldId: string; // ID of the triggering field (e.g. "entryType")
+  value: string;   // The option value that reveals this field (e.g. "duo")
+}
+
 export interface FormFieldConfig {
   id: string;
   label: string;
@@ -123,6 +128,15 @@ export interface FormFieldConfig {
   hint?: string;
   gridSpan?: 1 | 2;
   panelVisible?: boolean;
+  condition?: FieldCondition;
+}
+
+/** Helper to determine if a conditional field should be shown given the current formData. */
+export function isFieldVisible(field: FormFieldConfig, formData: Record<string, any>): boolean {
+  if (!field.condition || !field.condition.fieldId) return true;
+  const parentVal = formData[field.condition.fieldId];
+  if (parentVal === undefined || parentVal === null) return false;
+  return String(parentVal).trim().toLowerCase() === String(field.condition.value).trim().toLowerCase();
 }
 
 export interface Event {

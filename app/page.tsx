@@ -23,12 +23,6 @@ export default function HomePage() {
         <span className={styles.clubLabel}>Oyster Kode Club</span>
       </div>
 
-      {/* Live Badge */}
-      <div className={styles.badge}>
-        <span className={styles.badgeDot} aria-hidden="true" />
-        <span>Registrations Open</span>
-      </div>
-
       {/* Headline */}
       <h1 className={styles.headline}>
         Build.<br />
