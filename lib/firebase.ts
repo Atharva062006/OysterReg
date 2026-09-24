@@ -421,7 +421,31 @@ export async function deleteEvent(eventId: string): Promise<void> {
 
 // ── Candidate Registrations per Event ──────────────────────────────────────
 
+/**
+ * Check whether a registration doc already exists for the given formData (by rollNumber or email).
+ * Use this BEFORE opening any payment modal so money is never charged to an already-registered person.
+ */
+export async function checkRegistrationExists(
+  eventId: string,
+  formData: Record<string, any>
+): Promise<boolean> {
+  const rollNumber = formData.rollNumber ? String(formData.rollNumber).toUpperCase().trim() : null;
+  const email = formData.email ? String(formData.email).toLowerCase().trim() : null;
+  const docId = rollNumber || (email ? email.replace(/[^a-zA-Z0-9]/g, "_") : null);
+  if (!docId) return false;
+
+  const targetCollection =
+    eventId === "recruitment-2026"
+      ? collection(db, "registrations")
+      : collection(db, "events", eventId, "registrations");
+
+  const ref = doc(targetCollection, docId);
+  const snap = await getDoc(ref);
+  return snap.exists();
+}
+
 /** Submit candidate registration for a specific event. */
+
 export async function submitEventRegistration(
   eventId: string,
   formData: Record<string, any>,

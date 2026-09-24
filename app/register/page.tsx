@@ -6,6 +6,7 @@ import Image from "next/image";
 import {
   getActiveEvent,
   submitEventRegistration,
+  checkRegistrationExists,
   Event,
   isFieldVisible,
 } from "@/lib/firebase";
@@ -135,6 +136,20 @@ export default function RegistrationPage() {
 
     // Paid event path: Create Razorpay order, open modal, verify, then submit
     try {
+      // ── Pre-payment duplicate check ──────────────────────────────────────
+      // Check BEFORE charging the card so money is never taken from someone
+      // who is already registered (same roll number / email).
+      const alreadyRegistered = await checkRegistrationExists(event.id, formData);
+      if (alreadyRegistered) {
+        const identifier = formData.rollNumber || formData.email || "your identifier";
+        setSubmitError(
+          `A registration already exists for "${identifier}" in this event. ` +
+          `If you believe this is a mistake, please contact the organizers.`
+        );
+        setSubmitting(false);
+        return;
+      }
+
       const scriptLoaded = await loadRazorpayScript();
       if (!scriptLoaded) {
         throw new Error("Failed to load Razorpay payment gateway. Please check your internet connection.");
