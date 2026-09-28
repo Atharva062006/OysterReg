@@ -13,6 +13,7 @@ import {
   Registration,
 } from "@/lib/firebase";
 import EventAdminNav from "@/components/EventAdminNav";
+import { exportEventRegistrationsToCSV } from "@/lib/csvExport";
 import styles from "@/app/admin/admin.module.css";
 import tableStyles from "@/components/RegistrationTable.module.css";
 
@@ -119,30 +120,12 @@ export default function AptitudeReviewPage({ params }: PageProps) {
   }
 
   function exportCSV() {
-    const headers = [
-      "Name", "Roll Number", "Email", "Phone", "Department",
-      "Year", "Gender", "Coded Before", "Status", "Present"
-    ];
-    const rows = aptitudeCandidates.map((r) => [
-      r.name,
-      r.rollNumber,
-      r.email,
-      r.phone,
-      r.department,
-      r.year,
-      r.gender,
-      r.hasCodedBefore ? "Yes" : "No",
-      r.status || "registered",
-      r.present ? "Yes" : "No",
-    ]);
-    const csv = [headers, ...rows].map((row) => row.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `aptitude_${event?.name || "export"}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    exportEventRegistrationsToCSV(
+      event,
+      aptitudeCandidates,
+      undefined,
+      `${(event?.name || "event").toLowerCase().replace(/[^a-z0-9]+/g, "_")}_aptitude_candidates.csv`
+    );
   }
 
   // Aptitude stage candidates (registered, aptitude_shortlisted, rejected)

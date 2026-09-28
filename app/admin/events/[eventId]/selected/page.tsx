@@ -11,6 +11,7 @@ import {
   Registration,
 } from "@/lib/firebase";
 import EventAdminNav from "@/components/EventAdminNav";
+import { exportEventRegistrationsToCSV } from "@/lib/csvExport";
 import styles from "@/app/admin/admin.module.css";
 import tableStyles from "@/components/RegistrationTable.module.css";
 
@@ -95,26 +96,12 @@ export default function SelectedCandidatesPage({ params }: PageProps) {
 
   function exportCSV() {
     if (selectedCandidates.length === 0) return;
-    const headers = ["Roll Number", "Name", "Department", "Year", "Email", "Phone", "Status"];
-    const rows = selectedCandidates.map((c) => [
-      `"${c.rollNumber}"`,
-      `"${c.name}"`,
-      `"${c.department || ""}"`,
-      `"${c.year || ""}"`,
-      `"${c.email}"`,
-      `"${c.phone || ""}"`,
-      `"${c.status}"`,
-    ]);
-
-    const csvContent = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.setAttribute("download", `${event?.name || "Event"}_Selected_Candidates.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    exportEventRegistrationsToCSV(
+      event,
+      selectedCandidates,
+      undefined,
+      `${(event?.name || "event").toLowerCase().replace(/[^a-z0-9]+/g, "_")}_selected_candidates.csv`
+    );
   }
 
   if (loading) {

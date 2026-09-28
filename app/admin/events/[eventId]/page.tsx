@@ -88,6 +88,10 @@ export default function EventOverviewPage({ params }: EventOverviewProps) {
 
   const total = registrations.length;
   const presentCount = registrations.filter((r) => r.present).length;
+  const paidCount = registrations.filter((r) => r.paymentStatus === "paid").length;
+  const totalRevenue = registrations
+    .filter((r) => r.paymentStatus === "paid")
+    .reduce((sum, r) => sum + (r.paymentAmount || 0), 0);
 
   // Pipeline stage counts
   const stageCounts: Record<string, number> = {};
@@ -217,6 +221,20 @@ export default function EventOverviewPage({ params }: EventOverviewProps) {
               sub={total > 0 ? `${Math.round((presentCount / total) * 100)}% of total` : "—"}
             />
             <StatCard label="Configured Stages" value={event.stages.length} />
+            {event.razorpayEnabled && (
+              <>
+                <StatCard
+                  label="Paid Registrations"
+                  value={paidCount}
+                  sub={total > 0 ? `${Math.round((paidCount / total) * 100)}% of total` : "—"}
+                />
+                <StatCard
+                  label="Total Revenue"
+                  value={`₹${totalRevenue.toLocaleString("en-IN")}`}
+                  sub={`Fee: ₹${event.registrationFee || 0}`}
+                />
+              </>
+            )}
           </div>
         </section>
 
@@ -228,7 +246,7 @@ export default function EventOverviewPage({ params }: EventOverviewProps) {
               View All Candidates →
             </Link>
           </div>
-          <RegistrationTable initialData={registrations} />
+          <RegistrationTable initialData={registrations} event={event} eventId={eventId} />
         </section>
       </main>
     </div>

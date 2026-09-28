@@ -17,6 +17,7 @@ import {
   Panel,
 } from "@/lib/firebase";
 import EventAdminNav from "@/components/EventAdminNav";
+import { exportEventRegistrationsToCSV } from "@/lib/csvExport";
 import styles from "@/app/admin/admin.module.css";
 import tableStyles from "@/components/RegistrationTable.module.css";
 
@@ -214,52 +215,12 @@ export default function CandidatesPage({ params }: CandidatesPageProps) {
   }
 
   function exportCSV() {
-    const customFields = event?.formSchema || [];
-    const headers = [
-      "Name", "Roll Number", "Email", "Phone", "Department",
-      "Year", "Gender", "Coded Before", "Stage Status", "Present",
-      "Payment Status", "Payment Amount", "Order ID", "Payment ID",
-      "Panel Assigned", "Panel Verdict", "Overall Score",
-      ...customFields.map((f) => f.label),
-    ];
-    const rows = filtered.map((r) => {
-      const panelObj = r.panelId ? panels.find(p => p.id === r.panelId) : undefined;
-      const verdictObj = r.panelId ? r.interviews?.[r.panelId] : undefined;
-      
-      const customValues = customFields.map((f) => {
-        const val = r.formData?.[f.id] ?? (r as any)[f.id] ?? "";
-        return typeof val === "object" ? JSON.stringify(val) : String(val ?? "");
-      });
-
-      return [
-        r.name,
-        r.rollNumber,
-        r.email,
-        r.phone,
-        r.department,
-        r.year,
-        r.gender,
-        r.hasCodedBefore ? "Yes" : "No",
-        r.status || "registered",
-        r.present ? "Yes" : "No",
-        r.paymentStatus || "free",
-        r.paymentAmount ? `₹${r.paymentAmount}` : "0",
-        r.razorpayOrderId || "",
-        r.razorpayPaymentId || "",
-        panelObj?.name || "Unassigned",
-        verdictObj?.verdict || "pending",
-        verdictObj?.overallScore || "N/A",
-        ...customValues,
-      ];
-    });
-    const csv = [headers, ...rows].map((row) => row.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `candidates_${event?.name || "export"}_${stageFilter}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    exportEventRegistrationsToCSV(
+      event,
+      filtered,
+      panels,
+      `candidates_${(event?.name || "export").toLowerCase().replace(/[^a-z0-9]+/g, "_")}_${stageFilter}.csv`
+    );
   }
 
   // Helper: check if a candidate has a resume uploaded
