@@ -3,9 +3,9 @@ import ClientBackground from "@/components/ClientBackground";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Oyster Kode Club — DSA Marathon",
+  title: "Oyster Kode Club — Recruitment 2026",
   description:
-    "Register for the Oyster Kode Club DSA Marathon. Registrations are now open!",
+    "Register for Oyster Kode Club Recruitment 2026. Registrations are now open for FY and DSY students!",
   icons: {
     icon: "/logo4.png",
     apple: "/logo4.png",

@@ -31,10 +31,10 @@ export default function HomePage() {
       </h1>
 
       <p className={styles.tagline}>
-        DSA Marathon — Registrations are now open.
+        Official Club Recruitment 2026 — Registrations open for FY &amp; DSY students.
       </p>
 
-      {/* CTA Buttons */}
+      {/* CTA Button */}
       <div className={styles.actions}>
         <Link
           href="/register"
