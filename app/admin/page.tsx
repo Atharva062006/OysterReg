@@ -9,6 +9,7 @@ import {
   createEvent,
   toggleEventRegistration,
   setActiveEvent,
+  setEventPublic,
   deleteEvent,
   getEventRegistrations,
   Event,
@@ -134,6 +135,17 @@ export default function AdminHubPage() {
     }
   }
 
+  async function handleTogglePublic(eventId: string, currentPublic: boolean) {
+    try {
+      await setEventPublic(eventId, !currentPublic);
+      setEvents((prev) =>
+        prev.map((ev) => (ev.id === eventId ? { ...ev, isPublic: !currentPublic } : ev))
+      );
+    } catch {
+      alert("Failed to update public visibility.");
+    }
+  }
+
   async function handleDeleteEvent(eventId: string, eventName: string) {
     if (eventId === "recruitment-2026") {
       alert("The default Recruitment 2026 event cannot be deleted.");
@@ -230,6 +242,17 @@ export default function AdminHubPage() {
                   <div className={styles.eventHeader}>
                     <div className={styles.badgeRow}>
                       {ev.isActive && <span className={styles.badgeActive}>Active Site Registration</span>}
+                      {ev.isPublic && (
+                        <span style={{
+                          background: "rgba(245,166,35,0.15)",
+                          color: "#f5a623",
+                          border: "1px solid rgba(245,166,35,0.35)",
+                          fontSize: "0.6875rem",
+                          fontWeight: 600,
+                          padding: "0.2rem 0.5rem",
+                          borderRadius: "999px",
+                        }}>Public</span>
+                      )}
                       {ev.registrationOpen ? (
                         <span className={styles.badgeOpen}>Open</span>
                       ) : (
@@ -281,6 +304,22 @@ export default function AdminHubPage() {
                         </button>
                       </div>
                     )}
+
+                    <div className={styles.toggleRow}>
+                      <span>Public on /register:</span>
+                      <button
+                        onClick={() => handleTogglePublic(ev.id, !!ev.isPublic)}
+                        className={`btn btn-sm ${ev.isPublic ? "btn-outline" : "btn-outline"}`}
+                        style={{
+                          fontSize: "0.75rem",
+                          padding: "0.25rem 0.5rem",
+                          color: ev.isPublic ? "var(--danger)" : "var(--accent)",
+                          borderColor: ev.isPublic ? "rgba(239,68,68,0.3)" : "rgba(245,166,35,0.3)",
+                        }}
+                      >
+                        {ev.isPublic ? "Remove from Public" : "Make Public"}
+                      </button>
+                    </div>
                   </div>
 
                   <div className={styles.eventActions}>

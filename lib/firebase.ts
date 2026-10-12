@@ -145,6 +145,12 @@ export interface Event {
   description: string;
   registrationOpen: boolean;
   isActive?: boolean;
+  /**
+   * isPublic controls whether this event appears on the public /register chooser.
+   * Multiple events can be isPublic: true simultaneously, enabling concurrent registrations.
+   * isActive is kept for backward-compatibility as the legacy "primary" flag.
+   */
+  isPublic?: boolean;
   closedMessage?: string;
   stages: EventStage[];
   formSchema: FormFieldConfig[];
@@ -317,6 +323,23 @@ export async function getActiveEvent(): Promise<Event> {
   throw new Error("No active events found. Please contact the administrator.");
 }
 
+/**
+ * Get all events that are marked isPublic: true.
+ * Multiple events can be public simultaneously — this powers the /register chooser UI.
+ * Falls back to the single isActive event if no events have isPublic set yet
+ * (backward-compat for deployments that haven't set isPublic yet).
+ */
+export async function getPublicEvents(): Promise<Event[]> {
+  const events = await getEvents();
+  const publicEvents = events.filter((e) => e.isPublic === true);
+  if (publicEvents.length > 0) return publicEvents;
+  // Fallback: treat the isActive event as public for backward-compat
+  const active = events.find((e) => e.isActive);
+  if (active) return [active];
+  if (events.length > 0) return [events[0]];
+  return [];
+}
+
 /** Set a specific event as the active registration event for `/register`. */
 export async function setActiveEvent(eventId: string): Promise<void> {
   const events = await getEvents();
@@ -326,6 +349,12 @@ export async function setActiveEvent(eventId: string): Promise<void> {
     batch.update(ref, { isActive: ev.id === eventId, updatedAt: Timestamp.now() });
   }
   await batch.commit();
+}
+
+/** Toggle the isPublic flag on an event (controls /register chooser visibility). */
+export async function setEventPublic(eventId: string, isPublic: boolean): Promise<void> {
+  const ref = doc(db, "events", eventId);
+  await updateDoc(ref, { isPublic, updatedAt: Timestamp.now() });
 }
 
 /** Create a new event. */
@@ -686,7 +715,10 @@ export async function getPanels(eventId?: string): Promise<Panel[]> {
   const snapshot = await getDocs(q);
   const all = snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as Panel));
   if (eventId) {
-    return all.filter((p) => !p.eventId || p.eventId === eventId);
+    if (eventId === "recruitment-2026") {
+      return all.filter((p) => !p.eventId || p.eventId === "recruitment-2026");
+    }
+    return all.filter((p) => p.eventId === eventId);
   }
   return all;
 }
@@ -804,9 +836,9 @@ export async function deletePanel(panelId: string): Promise<void> {
   await deleteDoc(ref);
 }
 
-/** Verify panel passcode. */
 export async function verifyPanelPasscode(
-  passcode: string
+  passcode: string,
+  eventId?: string
 ): Promise<Panel | null> {
   const q = query(
     collection(db, "panels"),
@@ -814,22 +846,46 @@ export async function verifyPanelPasscode(
   );
   const snapshot = await getDocs(q);
   if (snapshot.empty) return null;
-  const d = snapshot.docs[0];
-  return { id: d.id, ...d.data() } as Panel;
+  const panels = snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as Panel));
+
+  if (eventId) {
+    const match = panels.find((p) => {
+      if (eventId === "recruitment-2026") {
+        return !p.eventId || p.eventId === "recruitment-2026";
+      }
+      return p.eventId === eventId;
+    });
+    return match || null;
+  }
+
+  return panels[0] || null;
 }
 
-/** Fetch candidates assigned to a panel. */
+/**
+ * Fetch candidates assigned to a panel.
+ * eventId is required for proper multi-event support — it routes the query to
+ * the correct registrations subcollection. Defaults to the legacy root collection
+ * for recruitment-2026 to preserve all existing panel data.
+ */
 export async function getCandidatesForPanel(
-  panelId: string
+  panelId: string,
+  eventId: string = "recruitment-2026"
 ): Promise<Registration[]> {
-  const q = query(
-    collection(db, "registrations"),
-    where("panelId", "==", panelId)
-  );
+  const targetCollection =
+    eventId === "recruitment-2026"
+      ? collection(db, "registrations")
+      : collection(db, "events", eventId, "registrations");
+
+  const q = query(targetCollection, where("panelId", "==", panelId));
   const snapshot = await getDocs(q);
   const all = snapshot.docs.map((d) => d.data() as Registration);
   return all
-    .filter((c) => c.status === "aptitude_shortlisted" || c.status === "interview_shortlisted" || c.status === "rejected")
+    .filter(
+      (c) =>
+        c.status === "aptitude_shortlisted" ||
+        c.status === "interview_shortlisted" ||
+        c.status === "rejected"
+    )
     .sort((a, b) => b.submittedAt.toMillis() - a.submittedAt.toMillis());
 }
 

@@ -62,9 +62,9 @@ export default function PanelEvaluationPage() {
     }
   }, [router]);
 
-  const loadData = useCallback((panelId: string, memberName: string) => {
+  const loadData = useCallback((panelId: string, memberName: string, eventId?: string) => {
     setLoading(true);
-    getCandidatesForPanel(panelId)
+    getCandidatesForPanel(panelId, eventId ?? "recruitment-2026")
       .then((regs) => {
         setCandidates(regs);
         const initial: Record<string, LocalMemberEval> = {};
@@ -95,7 +95,7 @@ export default function PanelEvaluationPage() {
   }, [session]);
 
   useEffect(() => {
-    if (session) loadData(session.id, session.memberName || "Interviewer");
+    if (session) loadData(session.id, session.memberName || "Interviewer", session.eventId);
   }, [session, loadData]);
 
   function handleSignOut() {

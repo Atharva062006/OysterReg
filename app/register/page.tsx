@@ -3,8 +3,9 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import Link from "next/link";
 import {
-  getActiveEvent,
+  getPublicEvents,
   submitEventRegistration,
   checkRegistrationExists,
   Event,
@@ -14,8 +15,116 @@ import { loadRazorpayScript } from "@/lib/razorpay";
 import DynamicFormRenderer from "@/components/DynamicFormRenderer";
 import styles from "./register.module.css";
 
+// ─── Event Chooser (shown when 2+ events are simultaneously public) ───────────
+
+function EventChooser({ events }: { events: Event[] }) {
+  return (
+    <main className={styles.main}>
+      <div className={styles.container}>
+        <header className={styles.header}>
+          <div className={styles.logoRow}>
+            <Image src="/logo4.png" alt="Oyster Kode Club" width={40} height={40} />
+            <div className={styles.clubTag}>Oyster Kode Club</div>
+          </div>
+          <h1 className={styles.title}>Open Registrations</h1>
+          <p className={styles.subtitle}>
+            Multiple events are currently open. Choose the one you&apos;d like to register for.
+          </p>
+        </header>
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+            gap: "1.25rem",
+            marginTop: "1.5rem",
+          }}
+        >
+          {events.map((ev) => (
+            <Link key={ev.id} href={`/events/${ev.id}/register`} style={{ textDecoration: "none" }}>
+              <div
+                style={{
+                  background: "var(--surface)",
+                  border: "1.5px solid var(--border)",
+                  borderRadius: "var(--radius-lg)",
+                  padding: "1.75rem",
+                  cursor: "pointer",
+                  transition: "border-color 0.18s, box-shadow 0.18s, transform 0.18s",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "0.75rem",
+                  height: "100%",
+                }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLDivElement).style.borderColor = "var(--accent)";
+                  (e.currentTarget as HTMLDivElement).style.boxShadow = "0 4px 24px rgba(245,166,35,0.12)";
+                  (e.currentTarget as HTMLDivElement).style.transform = "translateY(-2px)";
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLDivElement).style.borderColor = "var(--border)";
+                  (e.currentTarget as HTMLDivElement).style.boxShadow = "none";
+                  (e.currentTarget as HTMLDivElement).style.transform = "translateY(0)";
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
+                  <span
+                    style={{
+                      background: ev.type === "workshop" ? "rgba(59,130,246,0.15)" : "rgba(168,85,247,0.15)",
+                      color: ev.type === "workshop" ? "#3b82f6" : "#a855f7",
+                      border: ev.type === "workshop" ? "1px solid rgba(59,130,246,0.3)" : "1px solid rgba(168,85,247,0.3)",
+                      fontSize: "0.6875rem",
+                      fontWeight: 600,
+                      padding: "0.2rem 0.5rem",
+                      borderRadius: "999px",
+                      textTransform: "uppercase" as const,
+                    }}
+                  >
+                    {ev.type || "recruitment"}
+                  </span>
+                  {ev.registrationOpen ? (
+                    <span style={{ background: "rgba(34,197,94,0.12)", color: "#22c55e", border: "1px solid rgba(34,197,94,0.25)", fontSize: "0.6875rem", fontWeight: 600, padding: "0.2rem 0.5rem", borderRadius: "999px" }}>
+                      Open
+                    </span>
+                  ) : (
+                    <span style={{ background: "rgba(239,68,68,0.12)", color: "#ef4444", border: "1px solid rgba(239,68,68,0.25)", fontSize: "0.6875rem", fontWeight: 600, padding: "0.2rem 0.5rem", borderRadius: "999px" }}>
+                      Closed
+                    </span>
+                  )}
+                </div>
+
+                <h2 style={{ fontSize: "1.125rem", fontWeight: 700, color: "var(--text-primary)", lineHeight: 1.3 }}>
+                  {ev.name}
+                </h2>
+
+                {ev.description && (
+                  <p style={{ fontSize: "0.875rem", color: "var(--text-secondary)", lineHeight: 1.6 }}>
+                    {ev.description}
+                  </p>
+                )}
+
+                {ev.razorpayEnabled && (ev.registrationFee ?? 0) > 0 && (
+                  <p style={{ fontSize: "0.8125rem", color: "var(--accent)", fontWeight: 600 }}>
+                    💳 Registration Fee: ₹{ev.registrationFee}
+                  </p>
+                )}
+
+                <div style={{ marginTop: "auto", paddingTop: "0.75rem", color: "var(--accent)", fontWeight: 600, fontSize: "0.9375rem" }}>
+                  {ev.registrationOpen ? "Register Now →" : "View Details →"}
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </div>
+    </main>
+  );
+}
+
+// ─── Main Page ────────────────────────────────────────────────────────────────
+
 export default function RegistrationPage() {
   const router = useRouter();
+  const [events, setEvents] = useState<Event[]>([]);
   const [event, setEvent] = useState<Event | null>(null);
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [errors, setErrors] = useState<Record<string, string | undefined>>({});
@@ -24,12 +133,16 @@ export default function RegistrationPage() {
   const [loadError, setLoadError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  const loadActiveEvent = useCallback(async () => {
+  const loadPublicEvents = useCallback(async () => {
     setLoading(true);
     setLoadError("");
     try {
-      const active = await getActiveEvent();
-      setEvent(active);
+      const publicEvents = await getPublicEvents();
+      setEvents(publicEvents);
+      // If exactly one public event, drop straight into the form (backward-compat)
+      if (publicEvents.length === 1) {
+        setEvent(publicEvents[0]);
+      }
     } catch (err) {
       console.error(err);
       setLoadError("Unable to load the registration form. Please check your connection and try again.");
@@ -39,8 +152,8 @@ export default function RegistrationPage() {
   }, []);
 
   useEffect(() => {
-    loadActiveEvent();
-  }, [loadActiveEvent]);
+    loadPublicEvents();
+  }, [loadPublicEvents]);
 
   // Compute the currently applicable registration fee based on the selected option.
   const currentFee = useMemo(() => {
@@ -272,7 +385,7 @@ export default function RegistrationPage() {
           <p style={{ color: "var(--text-secondary)", fontSize: "0.9375rem", maxWidth: "460px", margin: "0 auto 1.5rem" }}>
             {loadError}
           </p>
-          <button onClick={loadActiveEvent} className="btn btn-primary">
+          <button onClick={loadPublicEvents} className="btn btn-primary">
             Try Again
           </button>
         </div>
@@ -280,7 +393,8 @@ export default function RegistrationPage() {
     );
   }
 
-  if (!event) {
+  // No public events at all
+  if (events.length === 0) {
     return (
       <main className={styles.main}>
         <div className={styles.container} style={{ textAlign: "center", padding: "4rem 0" }}>
@@ -291,6 +405,12 @@ export default function RegistrationPage() {
     );
   }
 
+  // Multiple public events → show chooser
+  if (events.length > 1 || !event) {
+    return <EventChooser events={events} />;
+  }
+
+  // Single public event — render form directly (backward-compatible)
   // Registrations Closed Gate
   if (!event.registrationOpen) {
     return (
@@ -394,3 +514,4 @@ export default function RegistrationPage() {
     </main>
   );
 }
+

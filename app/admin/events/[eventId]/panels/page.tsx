@@ -152,7 +152,7 @@ export default function EventPanelsPage({ params }: EventPanelsPageProps) {
   }
 
   function copyPanelLink(panelId: string) {
-    const url = `${window.location.origin}/panel/login`;
+    const url = `${window.location.origin}/events/${eventId}/panel/login`;
     navigator.clipboard.writeText(url).then(() => {
       setCopiedId(panelId);
       setTimeout(() => setCopiedId(null), 2000);
@@ -207,7 +207,7 @@ export default function EventPanelsPage({ params }: EventPanelsPageProps) {
             <div>
               <h2 className={styles.sectionTitle}>Panels & Interviewer Members</h2>
               <p className={panelStyles.sectionDesc}>
-                Define interview panels, assign interviewer panel members, and set passcodes. Interviewers visit <strong>/panel/login</strong> to select their name and evaluate candidates.
+                Define interview panels, assign interviewer panel members, and set passcodes. Interviewers visit <strong>/events/{eventId}/panel/login</strong> (or use Copy Panel Login URL below) to select their name and evaluate candidates.
               </p>
             </div>
             {!creating && (
