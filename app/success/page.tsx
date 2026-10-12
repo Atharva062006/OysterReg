@@ -8,12 +8,13 @@ export const metadata: Metadata = {
 };
 
 interface SuccessPageProps {
-  searchParams: Promise<{ whatsapp?: string }>;
+  searchParams: Promise<{ whatsapp?: string; paid?: string }>;
 }
 
 export default async function SuccessPage({ searchParams }: SuccessPageProps) {
   const resolvedParams = await searchParams;
   const whatsappUrl = resolvedParams.whatsapp;
+  const isPaid = resolvedParams.paid === "true" || resolvedParams.paid === "1";
 
   return (
     <main className={styles.main}>
@@ -32,21 +33,23 @@ export default async function SuccessPage({ searchParams }: SuccessPageProps) {
           Thank you for registering with Oyster Kode Club! We have recorded your details successfully.
         </p>
 
-        {/* Email Confirmation Notice */}
-        <div className={styles.emailNotice}>
-          <div className={styles.emailNoticeIcon} aria-hidden="true">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <rect width="20" height="16" x="2" y="4" rx="2" />
-              <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
-            </svg>
+        {/* Email Confirmation Notice (Only for paid events) */}
+        {isPaid && (
+          <div className={styles.emailNotice}>
+            <div className={styles.emailNoticeIcon} aria-hidden="true">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect width="20" height="16" x="2" y="4" rx="2" />
+                <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+              </svg>
+            </div>
+            <div className={styles.emailNoticeContent}>
+              <p className={styles.emailNoticeTitle}>Payment &amp; Registration Confirmation</p>
+              <p className={styles.emailNoticeText}>
+                You will receive confirmation of your payment and registration on your registered email address shortly.
+              </p>
+            </div>
           </div>
-          <div className={styles.emailNoticeContent}>
-            <p className={styles.emailNoticeTitle}>Payment &amp; Registration Confirmation</p>
-            <p className={styles.emailNoticeText}>
-              You will receive confirmation of your payment and registration on your registered email address shortly.
-            </p>
-          </div>
-        </div>
+        )}
         
         {whatsappUrl && (
           <div style={{ marginTop: "1.5rem", marginBottom: "0.5rem", background: "rgba(34, 197, 94, 0.1)", padding: "1.25rem", borderRadius: "var(--radius-lg)", border: "1px solid rgba(34, 197, 94, 0.3)" }}>

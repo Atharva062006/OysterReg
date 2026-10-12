@@ -216,7 +216,9 @@ export default function RegistrationPage() {
     setSubmitting(true);
     setSubmitError("");
 
-    const isPaidEvent = !!event.razorpayEnabled && (event.registrationFee || 0) > 0 || (event.pricingType === "dynamic" && !!event.pricingFieldId);
+    const isPaidEvent = !!event.razorpayEnabled && (
+      (event.registrationFee || 0) > 0 || (event.pricingType === "dynamic" && !!event.pricingFieldId)
+    );
 
     // For dynamic pricing, validate the pricing field selection has a configured price
     if (event.razorpayEnabled && event.pricingType === "dynamic" && event.pricingFieldId) {
@@ -334,12 +336,13 @@ export default function RegistrationPage() {
               paymentStatus: "paid",
             });
 
-            // Step 5: Redirect to success with WhatsApp group link
+            // Step 5: Redirect to success with WhatsApp group link and paid confirmation flag
+            const params = new URLSearchParams();
+            params.set("paid", "true");
             if (event.whatsappGroupLink) {
-              router.push(`/success?whatsapp=${encodeURIComponent(event.whatsappGroupLink)}`);
-            } else {
-              router.push("/success");
+              params.set("whatsapp", event.whatsappGroupLink);
             }
+            router.push(`/success?${params.toString()}`);
           } catch (err: any) {
             console.error(err);
             setSubmitError(err.message || "Payment verified but registration could not be saved. Please contact support.");
