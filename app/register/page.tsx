@@ -509,7 +509,7 @@ export default function RegistrationPage() {
                 : "Submit Application"}
             </button>
             <p className={styles.disclaimer}>
-              Your information will only be used for selection & organization purposes.
+              Your information will only be used for event registration & organization purposes.
             </p>
           </div>
         </form>

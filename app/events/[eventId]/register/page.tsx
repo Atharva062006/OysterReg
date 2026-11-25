@@ -338,8 +338,8 @@ export default function EventRegisterPage({ params }: EventRegisterPageProps) {
                 {isPaidEvent && currentFee > 0
                   ? `Registration Fee: ₹${currentFee}`
                   : event.pricingType === "dynamic"
-                  ? "Select your entry type to see the fee"
-                  : "Registration Fee: ₹" + (event.registrationFee ?? 0)}
+                    ? "Select your entry type to see the fee"
+                    : "Registration Fee: ₹" + (event.registrationFee ?? 0)}
               </span>
             </div>
           )}
@@ -372,13 +372,13 @@ export default function EventRegisterPage({ params }: EventRegisterPageProps) {
                   ? "Processing Payment..."
                   : "Submitting Application..."
                 : isPaidEvent && currentFee > 0
-                ? `Pay ₹${currentFee} & Register`
-                : isPaidEvent && currentFee === 0 && event?.pricingType === "dynamic"
-                ? "Select entry type to pay & register"
-                : "Submit Application"}
+                  ? `Pay ₹${currentFee} & Register`
+                  : isPaidEvent && currentFee === 0 && event?.pricingType === "dynamic"
+                    ? "Select entry type to pay & register"
+                    : "Submit Application"}
             </button>
             <p className={styles.disclaimer}>
-              Your information will only be used for {event.name} selection & organization purposes.
+              Your information will only be used for {event.name} registration & organization purposes.
             </p>
           </div>
         </form>
