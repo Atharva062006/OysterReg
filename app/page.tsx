@@ -31,7 +31,7 @@ export default function HomePage() {
       </h1>
 
       <p className={styles.tagline}>
-        Official Club Recruitment 2026 — Registrations open for FY &amp; DSY students.
+        C Marathon 2026 — Registrations open.
       </p>
 
       {/* CTA Button */}
