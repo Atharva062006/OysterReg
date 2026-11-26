@@ -471,7 +471,14 @@ export async function checkRegistrationExists(
 
   const ref = doc(targetCollection, docId);
   const snap = await getDoc(ref);
-  return snap.exists();
+  if (!snap.exists()) return false;
+
+  const status = snap.data()?.paymentStatus;
+  // Allow retrying payment if the previous attempt never completed
+  if (status === "pending" || status === "failed") {
+    return false;
+  }
+  return true;
 }
 
 /** Submit candidate registration for a specific event. */
@@ -505,9 +512,10 @@ export async function submitEventRegistration(
   const ref = doc(targetCollection, docId);
   const existing = await getDoc(ref);
 
-  // Allow overwriting only if the existing doc is a "pending" payment stub — this
-  // means the pre-payment write succeeded but the user is now completing payment.
-  if (existing.exists() && existing.data()?.paymentStatus !== "pending") {
+  // Allow overwriting only if the existing doc is a "pending" or "failed" payment stub —
+  // this lets users retry payment with their real identifier after an incomplete attempt.
+  const existingPaymentStatus = existing.data()?.paymentStatus;
+  if (existing.exists() && existingPaymentStatus !== "pending" && existingPaymentStatus !== "failed") {
     throw new Error("A registration with this identifier already exists for this event.");
   }
 
@@ -588,6 +596,27 @@ export async function updateRegistrationPayment(
     razorpayPaymentId: paymentDetails.razorpayPaymentId,
     paymentAmount: paymentDetails.paymentAmount,
   }, { merge: true });
+}
+
+/**
+ * Mark a pending registration's payment as "failed" when Razorpay Checkout
+ * fails or is dismissed before completing payment.
+ */
+export async function markRegistrationFailed(
+  eventId: string,
+  formData: Record<string, any>
+): Promise<void> {
+  const rollNumber = formData.rollNumber ? String(formData.rollNumber).toUpperCase().trim() : null;
+  const email = formData.email ? String(formData.email).toLowerCase().trim() : null;
+  const docId = rollNumber || (email ? email.replace(/[^a-zA-Z0-9]/g, "_") : null);
+  if (!docId) return;
+
+  const targetCollection = eventId === "recruitment-2026"
+    ? collection(db, "registrations")
+    : collection(db, "events", eventId, "registrations");
+
+  const ref = doc(targetCollection, docId);
+  await setDoc(ref, { paymentStatus: "failed" }, { merge: true });
 }
 
 /**

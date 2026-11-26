@@ -7,6 +7,7 @@ import {
   getEventById,
   submitEventRegistration,
   updateRegistrationPayment,
+  markRegistrationFailed,
   checkRegistrationExists,
   Event,
   isFieldVisible,
@@ -196,6 +197,7 @@ export default function EventRegisterPage({ params }: EventRegisterPageProps) {
       });
 
       // Step 3: Open Razorpay Checkout modal
+      let paymentHandled = false;
       const options = {
         key: orderData.keyId,
         amount: orderData.amount,
@@ -213,6 +215,7 @@ export default function EventRegisterPage({ params }: EventRegisterPageProps) {
           color: "#f5a623",
         },
         handler: async function (response: any) {
+          paymentHandled = true;
           try {
             // Step 4: Verify payment signature on server
             const verifyRes = await fetch("/api/razorpay/verify", {
@@ -252,6 +255,10 @@ export default function EventRegisterPage({ params }: EventRegisterPageProps) {
         },
         modal: {
           ondismiss: function () {
+            if (paymentHandled) return;
+            markRegistrationFailed(eventId, formData).catch((err) =>
+              console.error("Failed to mark payment as failed:", err)
+            );
             setSubmitting(false);
             setSubmitError("Payment process was cancelled. You can try again when ready.");
           },
@@ -260,6 +267,10 @@ export default function EventRegisterPage({ params }: EventRegisterPageProps) {
 
       const rzp = new (window as any).Razorpay(options);
       rzp.on("payment.failed", function (response: any) {
+        paymentHandled = true;
+        markRegistrationFailed(eventId, formData).catch((err) =>
+          console.error("Failed to mark payment as failed:", err)
+        );
         setSubmitting(false);
         setSubmitError(`Payment failed: ${response.error?.description || "Unknown error"}. Please try again.`);
       });

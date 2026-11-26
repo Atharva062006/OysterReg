@@ -563,21 +563,37 @@ export default function CandidatesPage({ params }: CandidatesPageProps) {
                               >
                                 ✓ Paid {reg.paymentAmount ? `₹${reg.paymentAmount}` : ""}
                               </span>
-                            ) : reg.paymentStatus === "pending" ? (
+                            ) : reg.paymentStatus === "pending" || reg.paymentStatus === "failed" ? (
                               <div style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem", flexWrap: "wrap" }}>
-                                <span
-                                  style={{
-                                    fontSize: "0.75rem",
-                                    fontWeight: 600,
-                                    padding: "0.2rem 0.5rem",
-                                    borderRadius: "999px",
-                                    background: "rgba(245, 166, 35, 0.15)",
-                                    color: "#f5a623",
-                                    border: "1px solid rgba(245, 166, 35, 0.3)",
-                                  }}
-                                >
-                                  ⏳ Pending
-                                </span>
+                                {reg.paymentStatus === "failed" ? (
+                                  <span
+                                    style={{
+                                      fontSize: "0.75rem",
+                                      fontWeight: 600,
+                                      padding: "0.2rem 0.5rem",
+                                      borderRadius: "999px",
+                                      background: "rgba(239, 68, 68, 0.15)",
+                                      color: "#ef4444",
+                                      border: "1px solid rgba(239, 68, 68, 0.3)",
+                                    }}
+                                  >
+                                    ✕ Failed
+                                  </span>
+                                ) : (
+                                  <span
+                                    style={{
+                                      fontSize: "0.75rem",
+                                      fontWeight: 600,
+                                      padding: "0.2rem 0.5rem",
+                                      borderRadius: "999px",
+                                      background: "rgba(245, 166, 35, 0.15)",
+                                      color: "#f5a623",
+                                      border: "1px solid rgba(245, 166, 35, 0.3)",
+                                    }}
+                                  >
+                                    ⏳ Pending
+                                  </span>
+                                )}
                                 <button
                                   type="button"
                                   onClick={() => handleMarkPaid(reg)}
