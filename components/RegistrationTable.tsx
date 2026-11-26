@@ -137,6 +137,13 @@ export default function RegistrationTable({ initialData, event, eventId }: Props
             : item
         )
       );
+      setViewCandidate((prev) =>
+        prev &&
+        ((prev.rollNumber && prev.rollNumber === r.rollNumber) ||
+          (!prev.rollNumber && prev.email === r.email))
+          ? { ...prev, paymentStatus: "paid" }
+          : prev
+      );
     } catch (err) {
       console.error("Failed to mark registration as paid:", err);
       alert("Failed to update payment status.");
@@ -531,59 +538,36 @@ export default function RegistrationTable({ initialData, event, eventId }: Props
                           >
                             ✓ Paid {r.paymentAmount ? `₹${r.paymentAmount}` : ""}
                           </span>
-                        ) : r.paymentStatus === "pending" || r.paymentStatus === "failed" ? (
-                          <div style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem", flexWrap: "wrap" }}>
-                            {r.paymentStatus === "failed" ? (
-                              <span
-                                style={{
-                                  fontSize: "0.75rem",
-                                  fontWeight: 600,
-                                  padding: "0.2rem 0.5rem",
-                                  borderRadius: "999px",
-                                  background: "rgba(239, 68, 68, 0.15)",
-                                  color: "#ef4444",
-                                  border: "1px solid rgba(239, 68, 68, 0.3)",
-                                  whiteSpace: "nowrap",
-                                }}
-                              >
-                                ✕ Failed
-                              </span>
-                            ) : (
-                              <span
-                                style={{
-                                  fontSize: "0.75rem",
-                                  fontWeight: 600,
-                                  padding: "0.2rem 0.5rem",
-                                  borderRadius: "999px",
-                                  background: "rgba(245, 166, 35, 0.15)",
-                                  color: "#f5a623",
-                                  border: "1px solid rgba(245, 166, 35, 0.3)",
-                                  whiteSpace: "nowrap",
-                                }}
-                              >
-                                ⏳ Pending
-                              </span>
-                            )}
-                            <button
-                              type="button"
-                              onClick={() => handleMarkPaid(r)}
-                              disabled={markingPaid === candidateId}
-                              style={{
-                                fontSize: "0.7rem",
-                                fontWeight: 600,
-                                padding: "0.2rem 0.45rem",
-                                borderRadius: "6px",
-                                background: "rgba(34, 197, 94, 0.12)",
-                                color: "#22c55e",
-                                border: "1px solid rgba(34, 197, 94, 0.35)",
-                                cursor: markingPaid === candidateId ? "wait" : "pointer",
-                                whiteSpace: "nowrap",
-                              }}
-                              title="Confirm & mark this payment as Paid"
-                            >
-                              {markingPaid === candidateId ? "..." : "✓ Mark Paid"}
-                            </button>
-                          </div>
+                        ) : r.paymentStatus === "failed" ? (
+                          <span
+                            style={{
+                              fontSize: "0.75rem",
+                              fontWeight: 600,
+                              padding: "0.2rem 0.5rem",
+                              borderRadius: "999px",
+                              background: "rgba(239, 68, 68, 0.15)",
+                              color: "#ef4444",
+                              border: "1px solid rgba(239, 68, 68, 0.3)",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            ✕ Failed
+                          </span>
+                        ) : r.paymentStatus === "pending" ? (
+                          <span
+                            style={{
+                              fontSize: "0.75rem",
+                              fontWeight: 600,
+                              padding: "0.2rem 0.5rem",
+                              borderRadius: "999px",
+                              background: "rgba(245, 166, 35, 0.15)",
+                              color: "#f5a623",
+                              border: "1px solid rgba(245, 166, 35, 0.3)",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            ⏳ Pending
+                          </span>
                         ) : (
                           <span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
                             Free
@@ -747,7 +731,22 @@ export default function RegistrationTable({ initialData, event, eventId }: Props
               </div>
             </div>
 
-            <div className={styles.modalFooter}>
+            <div className={styles.modalFooter} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "0.75rem" }}>
+              <div>
+                {(viewCandidate.paymentStatus === "pending" || viewCandidate.paymentStatus === "failed") && (
+                  <button
+                    type="button"
+                    onClick={() => handleMarkPaid(viewCandidate)}
+                    disabled={markingPaid === (viewCandidate.rollNumber || viewCandidate.email)}
+                    className="btn btn-outline"
+                    style={{ borderColor: "rgba(34, 197, 94, 0.5)", color: "#22c55e" }}
+                  >
+                    {markingPaid === (viewCandidate.rollNumber || viewCandidate.email)
+                      ? "Updating..."
+                      : "✓ Mark as Paid"}
+                  </button>
+                )}
+              </div>
               <button onClick={() => setViewCandidate(null)} className="btn btn-primary">
                 Close
               </button>

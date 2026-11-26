@@ -211,6 +211,13 @@ export default function CandidatesPage({ params }: CandidatesPageProps) {
             : r
         )
       );
+      setViewCandidate((prev) =>
+        prev &&
+        ((prev.rollNumber && prev.rollNumber === reg.rollNumber) ||
+          (!prev.rollNumber && prev.email === reg.email))
+          ? { ...prev, paymentStatus: "paid" }
+          : prev
+      );
     } catch {
       alert("Failed to mark payment as paid.");
     } finally {
@@ -600,56 +607,34 @@ export default function CandidatesPage({ params }: CandidatesPageProps) {
                               >
                                 ✓ Paid {reg.paymentAmount ? `₹${reg.paymentAmount}` : ""}
                               </span>
-                            ) : reg.paymentStatus === "pending" || reg.paymentStatus === "failed" ? (
-                              <div style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem", flexWrap: "wrap" }}>
-                                {reg.paymentStatus === "failed" ? (
-                                  <span
-                                    style={{
-                                      fontSize: "0.75rem",
-                                      fontWeight: 600,
-                                      padding: "0.2rem 0.5rem",
-                                      borderRadius: "999px",
-                                      background: "rgba(239, 68, 68, 0.15)",
-                                      color: "#ef4444",
-                                      border: "1px solid rgba(239, 68, 68, 0.3)",
-                                    }}
-                                  >
-                                    ✕ Failed
-                                  </span>
-                                ) : (
-                                  <span
-                                    style={{
-                                      fontSize: "0.75rem",
-                                      fontWeight: 600,
-                                      padding: "0.2rem 0.5rem",
-                                      borderRadius: "999px",
-                                      background: "rgba(245, 166, 35, 0.15)",
-                                      color: "#f5a623",
-                                      border: "1px solid rgba(245, 166, 35, 0.3)",
-                                    }}
-                                  >
-                                    ⏳ Pending
-                                  </span>
-                                )}
-                                <button
-                                  type="button"
-                                  onClick={() => handleMarkPaid(reg)}
-                                  disabled={markingPaidId === candidateId}
-                                  style={{
-                                    fontSize: "0.7rem",
-                                    fontWeight: 600,
-                                    padding: "0.2rem 0.45rem",
-                                    borderRadius: "6px",
-                                    background: "rgba(34, 197, 94, 0.12)",
-                                    color: "#22c55e",
-                                    border: "1px solid rgba(34, 197, 94, 0.35)",
-                                    cursor: markingPaidId === candidateId ? "wait" : "pointer",
-                                  }}
-                                  title="Confirm & mark this payment as Paid"
-                                >
-                                  {markingPaidId === candidateId ? "..." : "✓ Mark Paid"}
-                                </button>
-                              </div>
+                            ) : reg.paymentStatus === "failed" ? (
+                              <span
+                                style={{
+                                  fontSize: "0.75rem",
+                                  fontWeight: 600,
+                                  padding: "0.2rem 0.5rem",
+                                  borderRadius: "999px",
+                                  background: "rgba(239, 68, 68, 0.15)",
+                                  color: "#ef4444",
+                                  border: "1px solid rgba(239, 68, 68, 0.3)",
+                                }}
+                              >
+                                ✕ Failed
+                              </span>
+                            ) : reg.paymentStatus === "pending" ? (
+                              <span
+                                style={{
+                                  fontSize: "0.75rem",
+                                  fontWeight: 600,
+                                  padding: "0.2rem 0.5rem",
+                                  borderRadius: "999px",
+                                  background: "rgba(245, 166, 35, 0.15)",
+                                  color: "#f5a623",
+                                  border: "1px solid rgba(245, 166, 35, 0.3)",
+                                }}
+                              >
+                                ⏳ Pending
+                              </span>
                             ) : (
                               <span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>Free</span>
                             )}
@@ -871,7 +856,22 @@ export default function CandidatesPage({ params }: CandidatesPageProps) {
               )}
             </div>
 
-            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "1rem" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "0.75rem", marginTop: "1rem" }}>
+              <div>
+                {(viewCandidate.paymentStatus === "pending" || viewCandidate.paymentStatus === "failed") && (
+                  <button
+                    type="button"
+                    onClick={() => handleMarkPaid(viewCandidate)}
+                    disabled={markingPaidId === (viewCandidate.rollNumber || viewCandidate.email)}
+                    className="btn btn-outline"
+                    style={{ borderColor: "rgba(34, 197, 94, 0.5)", color: "#22c55e" }}
+                  >
+                    {markingPaidId === (viewCandidate.rollNumber || viewCandidate.email)
+                      ? "Updating..."
+                      : "✓ Mark as Paid"}
+                  </button>
+                )}
+              </div>
               <button onClick={() => setViewCandidate(null)} className="btn btn-primary">
                 Close
               </button>
