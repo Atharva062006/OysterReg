@@ -7,6 +7,7 @@ import {
   FormFieldConfig,
   togglePresent,
   toggleCandidatePresentInEvent,
+  markRegistrationPaid,
   DEFAULT_RECRUITMENT_FORM_SCHEMA,
 } from "@/lib/firebase";
 import { exportEventRegistrationsToCSV, getCandidateFieldValue } from "@/lib/csvExport";
@@ -31,6 +32,7 @@ export default function RegistrationTable({ initialData, event, eventId }: Props
   const [sortKey, setSortKey] = useState<SortKey>("submittedAt");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [toggling, setToggling] = useState<string | null>(null);
+  const [markingPaid, setMarkingPaid] = useState<string | null>(null);
 
   // Detail Modal State
   const [viewCandidate, setViewCandidate] = useState<Registration | null>(null);
@@ -111,6 +113,32 @@ export default function RegistrationTable({ initialData, event, eventId }: Props
       alert("Failed to update attendance status.");
     } finally {
       setToggling(null);
+    }
+  }
+
+  async function handleMarkPaid(r: Registration) {
+    const id = r.rollNumber || r.email;
+    const targetEventId = eventId || r.eventId || event?.id || "recruitment-2026";
+    if (!id) return;
+    setMarkingPaid(id);
+    try {
+      await markRegistrationPaid(targetEventId, {
+        rollNumber: r.rollNumber,
+        email: r.email,
+      });
+      setData((prev) =>
+        prev.map((item) =>
+          (item.rollNumber && item.rollNumber === r.rollNumber) ||
+          (!item.rollNumber && item.email === r.email)
+            ? { ...item, paymentStatus: "paid" }
+            : item
+        )
+      );
+    } catch (err) {
+      console.error("Failed to mark registration as paid:", err);
+      alert("Failed to update payment status.");
+    } finally {
+      setMarkingPaid(null);
     }
   }
 
@@ -459,20 +487,41 @@ export default function RegistrationTable({ initialData, event, eventId }: Props
                             ✓ Paid {r.paymentAmount ? `₹${r.paymentAmount}` : ""}
                           </span>
                         ) : r.paymentStatus === "pending" ? (
-                          <span
-                            style={{
-                              fontSize: "0.75rem",
-                              fontWeight: 600,
-                              padding: "0.2rem 0.5rem",
-                              borderRadius: "999px",
-                              background: "rgba(245, 166, 35, 0.15)",
-                              color: "#f5a623",
-                              border: "1px solid rgba(245, 166, 35, 0.3)",
-                              whiteSpace: "nowrap",
-                            }}
-                          >
-                            ⏳ Pending
-                          </span>
+                          <div style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem", flexWrap: "wrap" }}>
+                            <span
+                              style={{
+                                fontSize: "0.75rem",
+                                fontWeight: 600,
+                                padding: "0.2rem 0.5rem",
+                                borderRadius: "999px",
+                                background: "rgba(245, 166, 35, 0.15)",
+                                color: "#f5a623",
+                                border: "1px solid rgba(245, 166, 35, 0.3)",
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              ⏳ Pending
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleMarkPaid(r)}
+                              disabled={markingPaid === candidateId}
+                              style={{
+                                fontSize: "0.7rem",
+                                fontWeight: 600,
+                                padding: "0.2rem 0.45rem",
+                                borderRadius: "6px",
+                                background: "rgba(34, 197, 94, 0.12)",
+                                color: "#22c55e",
+                                border: "1px solid rgba(34, 197, 94, 0.35)",
+                                cursor: markingPaid === candidateId ? "wait" : "pointer",
+                                whiteSpace: "nowrap",
+                              }}
+                              title="Confirm & mark this payment as Paid"
+                            >
+                              {markingPaid === candidateId ? "..." : "✓ Mark Paid"}
+                            </button>
+                          </div>
                         ) : (
                           <span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
                             Free

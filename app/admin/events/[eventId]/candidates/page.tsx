@@ -12,6 +12,7 @@ import {
   bulkUpdateCandidateStatusInEvent,
   toggleCandidatePresentInEvent,
   assignPanelInEvent,
+  markRegistrationPaid,
   Event,
   Registration,
   Panel,
@@ -98,6 +99,7 @@ export default function CandidatesPage({ params }: CandidatesPageProps) {
   const [targetStage, setTargetStage] = useState("");
   const [resumeFilter, setResumeFilter] = useState<"all" | "missing" | "uploaded">("all");
   const [assigningRn, setAssigningRn] = useState<string | null>(null);
+  const [markingPaidId, setMarkingPaidId] = useState<string | null>(null);
 
   // Detail Modal & Notes Modal
   const [viewCandidate, setViewCandidate] = useState<Registration | null>(null);
@@ -188,6 +190,30 @@ export default function CandidatesPage({ params }: CandidatesPageProps) {
       alert("Failed to assign panel.");
     } finally {
       setAssigningRn(null);
+    }
+  }
+
+  async function handleMarkPaid(reg: Registration) {
+    const id = reg.rollNumber || reg.email;
+    if (!id) return;
+    setMarkingPaidId(id);
+    try {
+      await markRegistrationPaid(eventId, {
+        rollNumber: reg.rollNumber,
+        email: reg.email,
+      });
+      setRegistrations((prev) =>
+        prev.map((r) =>
+          (r.rollNumber && r.rollNumber === reg.rollNumber) ||
+          (!r.rollNumber && r.email === reg.email)
+            ? { ...r, paymentStatus: "paid" }
+            : r
+        )
+      );
+    } catch {
+      alert("Failed to mark payment as paid.");
+    } finally {
+      setMarkingPaidId(null);
     }
   }
 
@@ -538,19 +564,39 @@ export default function CandidatesPage({ params }: CandidatesPageProps) {
                                 ✓ Paid {reg.paymentAmount ? `₹${reg.paymentAmount}` : ""}
                               </span>
                             ) : reg.paymentStatus === "pending" ? (
-                              <span
-                                style={{
-                                  fontSize: "0.75rem",
-                                  fontWeight: 600,
-                                  padding: "0.2rem 0.5rem",
-                                  borderRadius: "999px",
-                                  background: "rgba(245, 166, 35, 0.15)",
-                                  color: "#f5a623",
-                                  border: "1px solid rgba(245, 166, 35, 0.3)",
-                                }}
-                              >
-                                ⏳ Pending
-                              </span>
+                              <div style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem", flexWrap: "wrap" }}>
+                                <span
+                                  style={{
+                                    fontSize: "0.75rem",
+                                    fontWeight: 600,
+                                    padding: "0.2rem 0.5rem",
+                                    borderRadius: "999px",
+                                    background: "rgba(245, 166, 35, 0.15)",
+                                    color: "#f5a623",
+                                    border: "1px solid rgba(245, 166, 35, 0.3)",
+                                  }}
+                                >
+                                  ⏳ Pending
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => handleMarkPaid(reg)}
+                                  disabled={markingPaidId === candidateId}
+                                  style={{
+                                    fontSize: "0.7rem",
+                                    fontWeight: 600,
+                                    padding: "0.2rem 0.45rem",
+                                    borderRadius: "6px",
+                                    background: "rgba(34, 197, 94, 0.12)",
+                                    color: "#22c55e",
+                                    border: "1px solid rgba(34, 197, 94, 0.35)",
+                                    cursor: markingPaidId === candidateId ? "wait" : "pointer",
+                                  }}
+                                  title="Confirm & mark this payment as Paid"
+                                >
+                                  {markingPaidId === candidateId ? "..." : "✓ Mark Paid"}
+                                </button>
+                              </div>
                             ) : (
                               <span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>Free</span>
                             )}

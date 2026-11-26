@@ -17,6 +17,16 @@
 import { readFileSync } from "fs";
 import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
+import { initializeApp, getApps } from "firebase/app";
+import {
+  getFirestore,
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  setDoc,
+  Timestamp,
+} from "firebase/firestore";
 
 // ── Load .env.local manually (no dotenv dependency needed) ──────────────────
 const __dir = dirname(fileURLToPath(import.meta.url));
@@ -34,8 +44,18 @@ for (const line of envLines) {
 
 const RZP_KEY_ID     = process.env.RAZORPAY_KEY_ID || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
 const RZP_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET;
-const FIREBASE_PROJECT_ID = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
-const FIREBASE_API_KEY    = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
+
+// ── Init Firebase SDK (same config as the app) ───────────────────────────────
+const firebaseConfig = {
+  apiKey:            process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain:        process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId:         process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket:     process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId:             process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+};
+const fbApp = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+const db    = getFirestore(fbApp);
 
 // ── Config ──────────────────────────────────────────────────────────────────
 const EVENT_ID = "c-marathon-2026-7309"; // from Firebase console screenshot
@@ -44,13 +64,13 @@ if (!RZP_KEY_ID || !RZP_KEY_SECRET) {
   console.error("❌  RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET not set in .env.local");
   process.exit(1);
 }
-if (!FIREBASE_PROJECT_ID || !FIREBASE_API_KEY) {
+if (!firebaseConfig.projectId || !firebaseConfig.apiKey) {
   console.error("❌  Firebase env vars not set in .env.local");
   process.exit(1);
 }
 
 const rzpAuth = "Basic " + Buffer.from(`${RZP_KEY_ID}:${RZP_KEY_SECRET}`).toString("base64");
-const FIRESTORE_BASE = `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents`;
+const REGS_COL = collection(db, "events", EVENT_ID, "registrations");
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -94,75 +114,56 @@ async function fetchOrderNotes(orderId) {
 
 /** Fetch all existing Firebase registrations for this event. */
 async function fetchExistingRegistrations() {
-  const url = `${FIRESTORE_BASE}/events/${EVENT_ID}/registrations?key=${FIREBASE_API_KEY}`;
-  const res = await fetch(url);
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Firestore read error: ${res.status} ${text}`);
-  }
-  const data = await res.json();
-  const docs = data.documents || [];
-  // Return set of emails and phones already in Firebase
+  const snapshot = await getDocs(REGS_COL);
   const emails = new Set();
   const phones = new Set();
-  for (const doc of docs) {
-    const fields = doc.fields || {};
-    if (fields.email?.stringValue) emails.add(fields.email.stringValue.toLowerCase().trim());
-    if (fields.phone?.stringValue) phones.add(fields.phone.stringValue.trim());
+  for (const d of snapshot.docs) {
+    const data = d.data();
+    if (data.email) emails.add(data.email.toLowerCase().trim());
+    if (data.phone) phones.add(data.phone.trim().replace(/\D/g, "").slice(-10));
   }
   return { emails, phones };
 }
 
-/** Write a stub registration document to Firestore via REST API. */
+/** Write a stub registration document to Firestore via Firebase SDK. */
 async function createStubRegistration(email, name, phone, paymentId, orderId, amount) {
   const docId = email.replace(/[^a-zA-Z0-9]/g, "_");
-  const url = `${FIRESTORE_BASE}/events/${EVENT_ID}/registrations?documentId=${encodeURIComponent(docId)}&key=${FIREBASE_API_KEY}`;
+  const ref   = doc(REGS_COL, docId);
 
-  const now = new Date().toISOString();
-  const amountRupees = Math.round(amount / 100); // paise → rupees
+  // Don't overwrite if something already exists
+  const existing = await getDoc(ref);
+  if (existing.exists()) return "already_exists";
 
-  const body = {
-    fields: {
-      name:               { stringValue: name || "" },
-      email:              { stringValue: email || "" },
-      phone:              { stringValue: phone || "" },
-      rollNumber:         { stringValue: "" },   // unknown — fill in manually
-      department:         { stringValue: "" },
-      year:               { stringValue: "" },
-      gender:             { stringValue: "" },
-      whyJoin:            { stringValue: "" },
-      hasCodedBefore:     { booleanValue: false },
-      portfolioUrl:       { stringValue: "" },
-      present:            { booleanValue: false },
-      status:             { stringValue: "registered" },
-      eventId:            { stringValue: EVENT_ID },
-      resumeUrl:          { stringValue: "" },
-      paymentStatus:      { stringValue: "paid" },
-      paymentAmount:      { integerValue: String(amountRupees) },
-      razorpayPaymentId:  { stringValue: paymentId || "" },
-      razorpayOrderId:    { stringValue: orderId || "" },
-      recoveredStub:      { booleanValue: true }, // flag so you can identify these
-      submittedAt: {
-        timestampValue: now,
-      },
+  const amountRupees = Math.round(amount / 100);
+
+  await setDoc(ref, {
+    name:              name || "",
+    email:             email || "",
+    phone:             phone || "",
+    rollNumber:        "",   // unknown — fill in manually
+    department:        "",
+    year:              "",
+    gender:            "",
+    whyJoin:           "",
+    hasCodedBefore:    false,
+    portfolioUrl:      "",
+    present:           false,
+    status:            "registered",
+    eventId:           EVENT_ID,
+    resumeUrl:         "",
+    paymentStatus:     "paid",
+    paymentAmount:     amountRupees,
+    razorpayPaymentId: paymentId || "",
+    razorpayOrderId:   orderId  || "",
+    recoveredStub:     true,
+    submittedAt:       Timestamp.now(),
+    formData: {
+      name:  name  || "",
+      email: email || "",
+      phone: phone || "",
     },
-  };
-
-  const res = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: rzpAuth, // not needed for Firestore REST but harmless
-    },
-    body: JSON.stringify(body),
   });
 
-  if (!res.ok) {
-    const text = await res.text();
-    // If doc already exists (409), that's fine
-    if (res.status === 409) return "already_exists";
-    throw new Error(`Firestore write error ${res.status}: ${text}`);
-  }
   return "created";
 }
 
@@ -196,8 +197,8 @@ async function main() {
     const notes = await fetchOrderNotes(payment.order_id);
     if (!notes) continue;
 
-    // Only process C-Marathon payments
-    if (notes.eventId && notes.eventId !== EVENT_ID) continue;
+    // Only process C-Marathon payments — skip if eventId is absent or mismatched
+    if (!notes.eventId || notes.eventId !== EVENT_ID) continue;
 
     const email = (notes.email || payment.email || "").toLowerCase().trim();
     const phone = (notes.contact || payment.contact || "").replace(/\D/g, "").slice(-10);

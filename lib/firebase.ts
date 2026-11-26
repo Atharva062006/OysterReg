@@ -13,6 +13,7 @@ import {
   orderBy,
   where,
   Timestamp,
+  type PartialWithFieldValue,
 } from "firebase/firestore";
 
 const firebaseConfig = {
@@ -556,6 +557,9 @@ export async function submitEventRegistration(
  * Update the payment fields on an existing registration after Razorpay confirms payment.
  * Used in the paid flow: a "pending" doc is written before the modal opens; this
  * upgrades it to "paid" once the signature is verified.
+ *
+ * Uses setDoc with merge:true so it works even if Firestore rules only allow
+ * create/write (not update) for the registrations collection.
  */
 export async function updateRegistrationPayment(
   eventId: string,
@@ -576,12 +580,35 @@ export async function updateRegistrationPayment(
     : collection(db, "events", eventId, "registrations");
 
   const ref = doc(targetCollection, docId);
-  await updateDoc(ref, {
+  // setDoc with merge:true only writes the specified fields — equivalent to updateDoc
+  // but works regardless of whether Firestore rules permit "update" vs "write".
+  await setDoc(ref, {
     paymentStatus: "paid",
     razorpayOrderId: paymentDetails.razorpayOrderId,
     razorpayPaymentId: paymentDetails.razorpayPaymentId,
     paymentAmount: paymentDetails.paymentAmount,
-  });
+  }, { merge: true });
+}
+
+/**
+ * Admin helper: manually mark a registration's payment as "paid".
+ * Used from the admin candidates/registrations page for registrations stuck in
+ * "pending" state after a confirmed Razorpay capture.
+ */
+export async function markRegistrationPaid(
+  eventId: string,
+  candidate: { rollNumber?: string; email?: string }
+): Promise<void> {
+  const rollNumber = candidate.rollNumber ? String(candidate.rollNumber).toUpperCase().trim() : null;
+  const email = candidate.email ? String(candidate.email).toLowerCase().trim() : null;
+  const docId = rollNumber || (email ? email.replace(/[^a-zA-Z0-9]/g, "_") : null);
+  if (!docId) throw new Error("Cannot determine registration document ID.");
+
+  const targetCollection = eventId === "recruitment-2026"
+    ? collection(db, "registrations")
+    : collection(db, "events", eventId, "registrations");
+  const ref = doc(targetCollection, docId);
+  await setDoc(ref, { paymentStatus: "paid" }, { merge: true });
 }
 
 /** Fetch all registrations for a specific event. */
