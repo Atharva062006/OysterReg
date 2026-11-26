@@ -8,6 +8,7 @@ import {
   togglePresent,
   toggleCandidatePresentInEvent,
   markRegistrationPaid,
+  getEventRegistrations,
   DEFAULT_RECRUITMENT_FORM_SCHEMA,
 } from "@/lib/firebase";
 import { exportEventRegistrationsToCSV, getCandidateFieldValue } from "@/lib/csvExport";
@@ -33,6 +34,7 @@ export default function RegistrationTable({ initialData, event, eventId }: Props
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [toggling, setToggling] = useState<string | null>(null);
   const [markingPaid, setMarkingPaid] = useState<string | null>(null);
+  const [syncing, setSyncing] = useState(false);
 
   // Detail Modal State
   const [viewCandidate, setViewCandidate] = useState<Registration | null>(null);
@@ -140,6 +142,33 @@ export default function RegistrationTable({ initialData, event, eventId }: Props
       alert("Failed to update payment status.");
     } finally {
       setMarkingPaid(null);
+    }
+  }
+
+  async function handleSyncRazorpay() {
+    const targetEventId = eventId || event?.id || "recruitment-2026";
+    setSyncing(true);
+    try {
+      const res = await fetch("/api/razorpay/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ eventId: targetEventId }),
+      });
+      const result = await res.json();
+      if (!res.ok) {
+        throw new Error(result.error || "Failed to sync with Razorpay.");
+      }
+      const refreshed = await getEventRegistrations(targetEventId);
+      setData(refreshed);
+      alert(
+        `Sync complete: checked ${result.checked} pending/failed order(s). ` +
+        `Marked ${result.markedPaid} as Paid, ${result.markedFailed} as Failed.`
+      );
+    } catch (err: any) {
+      console.error("Failed to sync with Razorpay:", err);
+      alert(err.message || "Failed to sync payments with Razorpay.");
+    } finally {
+      setSyncing(false);
     }
   }
 
@@ -317,19 +346,34 @@ export default function RegistrationTable({ initialData, event, eventId }: Props
               <option value="">All Payments</option>
               <option value="paid">Paid</option>
               <option value="pending">Pending</option>
+              <option value="failed">Failed</option>
               <option value="free">Free</option>
             </select>
           )}
         </div>
 
-        <button
-          onClick={handleExportCSV}
-          className={`btn btn-outline ${styles.exportBtn}`}
-          id="export-csv-btn"
-          title="Export all form fields and submission details to CSV"
-        >
-          Export CSV ({filtered.length})
-        </button>
+        <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", flexWrap: "wrap" }}>
+          {hasPaidRegistrations && (
+            <button
+              type="button"
+              onClick={handleSyncRazorpay}
+              disabled={syncing}
+              className={`btn btn-outline ${styles.exportBtn}`}
+              id="sync-razorpay-btn"
+              title="Check Razorpay for any captured payments still showing as Pending/Failed"
+            >
+              {syncing ? "Syncing..." : "🔄 Sync Razorpay"}
+            </button>
+          )}
+          <button
+            onClick={handleExportCSV}
+            className={`btn btn-outline ${styles.exportBtn}`}
+            id="export-csv-btn"
+            title="Export all form fields and submission details to CSV"
+          >
+            Export CSV ({filtered.length})
+          </button>
+        </div>
       </div>
 
       <p className={styles.resultCount}>

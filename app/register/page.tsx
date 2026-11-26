@@ -273,6 +273,10 @@ export default function RegistrationPage() {
       }
 
       // Step 1: Create Order on server
+      const rollNumForDoc = formData.rollNumber ? String(formData.rollNumber).toUpperCase().trim() : null;
+      const emailForDoc = formData.email ? String(formData.email).toLowerCase().trim() : null;
+      const docIdForNotes = rollNumForDoc || (emailForDoc ? emailForDoc.replace(/[^a-zA-Z0-9]/g, "_") : "");
+
       const orderRes = await fetch("/api/razorpay/create-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -282,6 +286,7 @@ export default function RegistrationPage() {
           selectedOption: event.pricingFieldId ? formData[event.pricingFieldId] : undefined,
           receipt: `rcpt_${event.id.slice(0, 8)}_${(formData.rollNumber || formData.email || Date.now()).toString().replace(/[^a-zA-Z0-9]/g, "_")}`,
           notes: {
+            docId: docIdForNotes,
             name: formData.name || "",
             email: formData.email || "",
             phone: formData.phone || "",

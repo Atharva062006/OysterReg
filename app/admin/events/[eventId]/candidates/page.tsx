@@ -100,6 +100,7 @@ export default function CandidatesPage({ params }: CandidatesPageProps) {
   const [resumeFilter, setResumeFilter] = useState<"all" | "missing" | "uploaded">("all");
   const [assigningRn, setAssigningRn] = useState<string | null>(null);
   const [markingPaidId, setMarkingPaidId] = useState<string | null>(null);
+  const [syncing, setSyncing] = useState(false);
 
   // Detail Modal & Notes Modal
   const [viewCandidate, setViewCandidate] = useState<Registration | null>(null);
@@ -214,6 +215,31 @@ export default function CandidatesPage({ params }: CandidatesPageProps) {
       alert("Failed to mark payment as paid.");
     } finally {
       setMarkingPaidId(null);
+    }
+  }
+
+  async function handleSyncRazorpay() {
+    setSyncing(true);
+    try {
+      const res = await fetch("/api/razorpay/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ eventId }),
+      });
+      const result = await res.json();
+      if (!res.ok) {
+        throw new Error(result.error || "Failed to sync with Razorpay.");
+      }
+      await loadData();
+      alert(
+        `Sync complete: checked ${result.checked} pending/failed order(s). ` +
+        `Marked ${result.markedPaid} as Paid, ${result.markedFailed} as Failed.`
+      );
+    } catch (err: any) {
+      console.error(err);
+      alert(err.message || "Failed to sync payments with Razorpay.");
+    } finally {
+      setSyncing(false);
     }
   }
 
@@ -376,6 +402,17 @@ export default function CandidatesPage({ params }: CandidatesPageProps) {
               <option value="uploaded">Resume Uploaded</option>
             </select>
             
+            {event.razorpayEnabled && (
+              <button
+                type="button"
+                onClick={handleSyncRazorpay}
+                disabled={syncing}
+                className="btn btn-outline"
+                style={{ fontSize: "0.8125rem", whiteSpace: "nowrap" }}
+              >
+                {syncing ? "Syncing..." : "🔄 Sync Razorpay"}
+              </button>
+            )}
             <button 
               onClick={exportCSV} 
               className="btn btn-outline"
