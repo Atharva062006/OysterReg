@@ -7,6 +7,7 @@ import Link from "next/link";
 import {
   getPublicEvents,
   submitEventRegistration,
+  updateRegistrationPayment,
   checkRegistrationExists,
   Event,
   isFieldVisible,
@@ -292,7 +293,16 @@ export default function RegistrationPage() {
         throw new Error(orderData.error || "Failed to initialize payment.");
       }
 
-      // Step 2: Open Razorpay Checkout modal
+      // Step 2: Pre-save registration as "pending" BEFORE opening the modal.
+      // This guarantees form data is in Firestore even if the browser closes
+      // mid-payment. It will be upgraded to "paid" once signature is verified.
+      await submitEventRegistration(event.id, formData, {
+        razorpayOrderId: orderData.orderId,
+        paymentAmount: orderData.resolvedFee ?? event.registrationFee,
+        paymentStatus: "pending",
+      });
+
+      // Step 3: Open Razorpay Checkout modal
       const options = {
         key: orderData.keyId,
         amount: orderData.amount,
@@ -311,7 +321,7 @@ export default function RegistrationPage() {
         },
         handler: async function (response: any) {
           try {
-            // Step 3: Verify payment signature on server
+            // Step 4: Verify payment signature on server
             const verifyRes = await fetch("/api/razorpay/verify", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -327,16 +337,14 @@ export default function RegistrationPage() {
               throw new Error(verifyData.error || "Payment verification failed. Please contact admin if amount was deducted.");
             }
 
-            // Step 4: Record registration in Firestore with payment details
-            await submitEventRegistration(event.id, formData, {
+            // Step 5: Upgrade the pending registration to "paid"
+            await updateRegistrationPayment(event.id, formData, {
               razorpayOrderId: response.razorpay_order_id,
               razorpayPaymentId: response.razorpay_payment_id,
-              // Use the server-resolved fee (not a client-supplied value)
               paymentAmount: orderData.resolvedFee ?? event.registrationFee,
-              paymentStatus: "paid",
             });
 
-            // Step 5: Redirect to success with WhatsApp group link and paid confirmation flag
+            // Step 6: Redirect to success with WhatsApp group link and paid confirmation flag
             const params = new URLSearchParams();
             params.set("paid", "true");
             if (event.whatsappGroupLink) {

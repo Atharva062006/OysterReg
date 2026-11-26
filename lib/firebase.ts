@@ -503,7 +503,10 @@ export async function submitEventRegistration(
 
   const ref = doc(targetCollection, docId);
   const existing = await getDoc(ref);
-  if (existing.exists()) {
+
+  // Allow overwriting only if the existing doc is a "pending" payment stub — this
+  // means the pre-payment write succeeded but the user is now completing payment.
+  if (existing.exists() && existing.data()?.paymentStatus !== "pending") {
     throw new Error("A registration with this identifier already exists for this event.");
   }
 
@@ -518,6 +521,10 @@ export async function submitEventRegistration(
   const cloudinaryUrl = Object.values(formData).find(
     (val) => typeof val === "string" && val.includes("cloudinary.com")
   );
+
+  const resolvedPaymentStatus: Registration["paymentStatus"] =
+    paymentDetails?.paymentStatus ??
+    (event.razorpayEnabled && (event.registrationFee || 0) > 0 ? "pending" : "free");
 
   const payload: Registration = {
     name: formData.name || "",
@@ -536,13 +543,45 @@ export async function submitEventRegistration(
     formData: cleanFormData,
     eventId,
     resumeUrl: cloudinaryUrl || "",
-    paymentStatus: paymentDetails?.paymentStatus || (event.razorpayEnabled && (event.registrationFee || 0) > 0 ? "paid" : "free"),
+    paymentStatus: resolvedPaymentStatus,
     ...(paymentDetails?.paymentAmount !== undefined ? { paymentAmount: paymentDetails.paymentAmount } : {}),
     ...(paymentDetails?.razorpayOrderId ? { razorpayOrderId: paymentDetails.razorpayOrderId } : {}),
     ...(paymentDetails?.razorpayPaymentId ? { razorpayPaymentId: paymentDetails.razorpayPaymentId } : {}),
   };
 
   await setDoc(ref, payload);
+}
+
+/**
+ * Update the payment fields on an existing registration after Razorpay confirms payment.
+ * Used in the paid flow: a "pending" doc is written before the modal opens; this
+ * upgrades it to "paid" once the signature is verified.
+ */
+export async function updateRegistrationPayment(
+  eventId: string,
+  formData: Record<string, any>,
+  paymentDetails: {
+    razorpayOrderId: string;
+    razorpayPaymentId: string;
+    paymentAmount: number;
+  }
+): Promise<void> {
+  const rollNumber = formData.rollNumber ? String(formData.rollNumber).toUpperCase().trim() : null;
+  const email = formData.email ? String(formData.email).toLowerCase().trim() : null;
+  const docId = rollNumber || (email ? email.replace(/[^a-zA-Z0-9]/g, "_") : null);
+  if (!docId) throw new Error("Cannot determine registration document ID.");
+
+  const targetCollection = eventId === "recruitment-2026"
+    ? collection(db, "registrations")
+    : collection(db, "events", eventId, "registrations");
+
+  const ref = doc(targetCollection, docId);
+  await updateDoc(ref, {
+    paymentStatus: "paid",
+    razorpayOrderId: paymentDetails.razorpayOrderId,
+    razorpayPaymentId: paymentDetails.razorpayPaymentId,
+    paymentAmount: paymentDetails.paymentAmount,
+  });
 }
 
 /** Fetch all registrations for a specific event. */
