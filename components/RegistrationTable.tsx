@@ -9,6 +9,7 @@ import {
   toggleCandidatePresentInEvent,
   markRegistrationPaid,
   getEventRegistrations,
+  isConfirmedRegistration,
   DEFAULT_RECRUITMENT_FORM_SCHEMA,
 } from "@/lib/firebase";
 import { exportEventRegistrationsToCSV, getCandidateFieldValue } from "@/lib/csvExport";
@@ -35,6 +36,7 @@ export default function RegistrationTable({ initialData, event, eventId }: Props
   const [toggling, setToggling] = useState<string | null>(null);
   const [markingPaid, setMarkingPaid] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
+  const [showIncomplete, setShowIncomplete] = useState(false);
 
   // Detail Modal State
   const [viewCandidate, setViewCandidate] = useState<Registration | null>(null);
@@ -218,10 +220,12 @@ export default function RegistrationTable({ initialData, event, eventId }: Props
       if (filterAttendance === "present" && !r.present) return false;
       if (filterAttendance === "absent" && r.present) return false;
 
-      // 4. Payment filter
+      // 4. Payment filter (and hide incomplete pending/failed unless toggled or explicitly filtered)
+      const currentPay = r.paymentStatus || (event?.razorpayEnabled ? "pending" : "free");
       if (filterPayment) {
-        const currentPay = r.paymentStatus || (event?.razorpayEnabled ? "pending" : "free");
         if (currentPay !== filterPayment) return false;
+      } else if (!showIncomplete && !isConfirmedRegistration(r)) {
+        return false;
       }
 
       // 5. Dynamic categorical filters
@@ -361,16 +365,40 @@ export default function RegistrationTable({ initialData, event, eventId }: Props
 
         <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", flexWrap: "wrap" }}>
           {hasPaidRegistrations && (
-            <button
-              type="button"
-              onClick={handleSyncRazorpay}
-              disabled={syncing}
-              className={`btn btn-outline ${styles.exportBtn}`}
-              id="sync-razorpay-btn"
-              title="Check Razorpay for any captured payments still showing as Pending/Failed"
-            >
-              {syncing ? "Syncing..." : "🔄 Sync Razorpay"}
-            </button>
+            <>
+              <label
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "0.4rem",
+                  fontSize: "0.8125rem",
+                  color: "var(--text-secondary)",
+                  cursor: "pointer",
+                  padding: "0.35rem 0.65rem",
+                  borderRadius: "var(--radius-sm)",
+                  border: "1px solid var(--border)",
+                  background: showIncomplete ? "rgba(245, 166, 35, 0.1)" : "transparent",
+                }}
+                title="Show registrations with pending or failed payments"
+              >
+                <input
+                  type="checkbox"
+                  checked={showIncomplete}
+                  onChange={(e) => setShowIncomplete(e.target.checked)}
+                />
+                Show Pending/Failed ({data.filter((r) => !isConfirmedRegistration(r)).length})
+              </label>
+              <button
+                type="button"
+                onClick={handleSyncRazorpay}
+                disabled={syncing}
+                className={`btn btn-outline ${styles.exportBtn}`}
+                id="sync-razorpay-btn"
+                title="Check Razorpay for any captured payments still showing as Pending/Failed"
+              >
+                {syncing ? "Syncing..." : "🔄 Sync Razorpay"}
+              </button>
+            </>
           )}
           <button
             onClick={handleExportCSV}
@@ -384,7 +412,7 @@ export default function RegistrationTable({ initialData, event, eventId }: Props
       </div>
 
       <p className={styles.resultCount}>
-        Showing {filtered.length} of {data.length} candidate registrations
+        Showing {filtered.length} of {data.filter(isConfirmedRegistration).length} confirmed registrations
       </p>
 
       {/* ── Table ── */}

@@ -7,6 +7,7 @@ import Link from "next/link";
 import {
   getEventById,
   getEventRegistrations,
+  isConfirmedRegistration,
   toggleEventRegistration,
   Event,
   Registration,
@@ -86,20 +87,21 @@ export default function EventOverviewPage({ params }: EventOverviewProps) {
     });
   }
 
-  const total = registrations.length;
-  const presentCount = registrations.filter((r) => r.present).length;
-  const paidCount = registrations.filter((r) => r.paymentStatus === "paid").length;
-  const totalRevenue = registrations
+  const confirmedRegistrations = registrations.filter(isConfirmedRegistration);
+  const total = confirmedRegistrations.length;
+  const presentCount = confirmedRegistrations.filter((r) => r.present).length;
+  const paidCount = confirmedRegistrations.filter((r) => r.paymentStatus === "paid").length;
+  const totalRevenue = confirmedRegistrations
     .filter((r) => r.paymentStatus === "paid")
     .reduce((sum, r) => sum + (r.paymentAmount || 0), 0);
 
-  // Pipeline stage counts
+  // Pipeline stage counts (confirmed registrations only)
   const stageCounts: Record<string, number> = {};
   if (event) {
     event.stages.forEach((st) => {
       stageCounts[st.id] = 0;
     });
-    registrations.forEach((r) => {
+    confirmedRegistrations.forEach((r) => {
       const st = r.status || (event.stages[0]?.id || "registered");
       stageCounts[st] = (stageCounts[st] || 0) + 1;
     });

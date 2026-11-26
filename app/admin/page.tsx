@@ -12,6 +12,7 @@ import {
   setEventPublic,
   deleteEvent,
   getEventRegistrations,
+  isConfirmedRegistration,
   Event,
 } from "@/lib/firebase";
 import StatCard from "@/components/StatCard";
@@ -55,7 +56,7 @@ export default function AdminHubPage() {
         list.map(async (ev) => {
           try {
             const regs = await getEventRegistrations(ev.id);
-            counts[ev.id] = regs.length;
+            counts[ev.id] = regs.filter(isConfirmedRegistration).length;
           } catch (err) {
             console.warn(`Could not load candidate registrations for ${ev.id}:`, err);
             counts[ev.id] = 0;

@@ -452,6 +452,14 @@ export async function deleteEvent(eventId: string): Promise<void> {
 // ── Candidate Registrations per Event ──────────────────────────────────────
 
 /**
+ * Returns true if a registration is confirmed (paid, free, or legacy without paymentStatus).
+ * Excludes incomplete "pending" or "failed" payment attempts from totals and default views.
+ */
+export function isConfirmedRegistration(r: Registration): boolean {
+  return r.paymentStatus !== "pending" && r.paymentStatus !== "failed";
+}
+
+/**
  * Check whether a registration doc already exists for the given formData (by rollNumber or email).
  * Use this BEFORE opening any payment modal so money is never charged to an already-registered person.
  */

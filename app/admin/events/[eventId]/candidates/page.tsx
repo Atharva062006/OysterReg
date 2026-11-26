@@ -13,6 +13,7 @@ import {
   toggleCandidatePresentInEvent,
   assignPanelInEvent,
   markRegistrationPaid,
+  isConfirmedRegistration,
   Event,
   Registration,
   Panel,
@@ -101,6 +102,7 @@ export default function CandidatesPage({ params }: CandidatesPageProps) {
   const [assigningRn, setAssigningRn] = useState<string | null>(null);
   const [markingPaidId, setMarkingPaidId] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
+  const [showIncomplete, setShowIncomplete] = useState(false);
 
   // Detail Modal & Notes Modal
   const [viewCandidate, setViewCandidate] = useState<Registration | null>(null);
@@ -298,7 +300,10 @@ export default function CandidatesPage({ params }: CandidatesPageProps) {
   }
 
   // Filtered registrations
-  const filtered = registrations.filter((r) => {
+  const confirmedRegistrations = registrations.filter(isConfirmedRegistration);
+  const visiblePool = showIncomplete ? registrations : confirmedRegistrations;
+
+  const filtered = visiblePool.filter((r) => {
     const statusMatch = stageFilter === "all" || (r.status || "registered") === stageFilter;
     const q = search.toLowerCase().trim();
     const textMatch =
@@ -387,9 +392,9 @@ export default function CandidatesPage({ params }: CandidatesPageProps) {
               onChange={(e) => setStageFilter(e.target.value)}
               className={tableStyles.filterSelect}
             >
-              <option value="all">All Stages ({registrations.length})</option>
+              <option value="all">All Stages ({visiblePool.length})</option>
               {event.stages.map((st) => {
-                const cnt = registrations.filter((r) => (r.status || event.stages[0]?.id) === st.id).length;
+                const cnt = visiblePool.filter((r) => (r.status || event.stages[0]?.id) === st.id).length;
                 return (
                   <option key={st.id} value={st.id}>
                     {st.name} ({cnt})
@@ -410,15 +415,39 @@ export default function CandidatesPage({ params }: CandidatesPageProps) {
             </select>
             
             {event.razorpayEnabled && (
-              <button
-                type="button"
-                onClick={handleSyncRazorpay}
-                disabled={syncing}
-                className="btn btn-outline"
-                style={{ fontSize: "0.8125rem", whiteSpace: "nowrap" }}
-              >
-                {syncing ? "Syncing..." : "🔄 Sync Razorpay"}
-              </button>
+              <>
+                <label
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "0.4rem",
+                    fontSize: "0.8125rem",
+                    color: "var(--text-secondary)",
+                    cursor: "pointer",
+                    padding: "0.35rem 0.65rem",
+                    borderRadius: "var(--radius-sm)",
+                    border: "1px solid var(--border)",
+                    background: showIncomplete ? "rgba(245, 166, 35, 0.1)" : "transparent",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={showIncomplete}
+                    onChange={(e) => setShowIncomplete(e.target.checked)}
+                  />
+                  Show Pending/Failed ({registrations.length - confirmedRegistrations.length})
+                </label>
+                <button
+                  type="button"
+                  onClick={handleSyncRazorpay}
+                  disabled={syncing}
+                  className="btn btn-outline"
+                  style={{ fontSize: "0.8125rem", whiteSpace: "nowrap" }}
+                >
+                  {syncing ? "Syncing..." : "🔄 Sync Razorpay"}
+                </button>
+              </>
             )}
             <button 
               onClick={exportCSV} 
